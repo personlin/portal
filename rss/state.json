@@ -1,0 +1,743 @@
+{
+  "version": 1,
+  "seen": {
+    "https://pubs.geoscienceworld.org/rss/site_131/advanceAccess_66.xml": {
+      "43e7273512fa98c079b82e94d9468f2ce9e97d5f": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "47621b8c30bc1259fe769df98f764e1448a5a723": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      }
+    },
+    "https://pubs.geoscienceworld.org/rss/site_129/advanceAccess_65.xml": {
+      "3682a6dac035f317d8268c91668035d70dc3d59c": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "a9d0f84b00abad801a7f2f79cb3320e03dfcedab": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "ce7d79fa5ea5b6eb00dfd87bfc0c49b2bfc375b6": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "a5498e4711d34d8bbd78897179769692ca38cb15": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "eed432b85a28c5a457430fa72ea7a96a6a78bbb8": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      }
+    },
+    "https://journals.sagepub.com/action/showFeed?ui=0&mi=ehikzz&ai=2b4&jc=eqs&type=axatoc&feed=rss": {},
+    "https://rss.sciencedirect.com/publication/science/00983004": {
+      "dfc672eaefcc6c0839b51bfa031cec4c52a22130": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "3d83a40fb13079005eef2498f32df52cdf6a5d64": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "d607a0aa8dee7e5ae3c77026d17a6cae30247bc7": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "9485ea396b6938965dca8c0c0f3d465b43135497": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "cd6b0dedf8f26ba54face9c99e60a20259c05298": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "2700376e7f314113e2dee64ca5630eb1de23dd79": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "67c858c00fb347dbfac2921f902a1f3aea69deb2": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "7a378652f8d9508c47497a49e78a8eedfa5dd743": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "075df4f55bf6d49d2630d9ac050d50e7012bacdb": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "0d4352489232141a59760a8417bfef233c6e16c5": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "497853aaf145b60179b56622148165e3cfd4ceea": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "ee040be377ba6811a2f04d6a96db655479784e08": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "5a69bd6585fcd987e1f26f75538b6706a517c8af": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "9129ac6a797b66c9137a4913d62c6b64a6df9fc0": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "bd5e77f268c4374abec727359cf11f3db1101e75": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "1e7d37244167af16539596d1b3e4b1b2e57c04fa": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "102dc834728345f1ceb2f574a91bb67771de461d": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "6fe421f7e90b06e042626c3139df0f7f1f9ab056": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "94c830f6e4f04f0915f77b22b23cb2608fe5bcf5": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "40a8e7878756b17c031817f235580a4fcaa83db3": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "dd8d39f3636451a5116bd4605f61b237f36402f1": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "3edac4a10a48d2a14e5c275ec2cd395af602a76a": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "f0be50f48024698c3697e664b60ef9e5e17de9a9": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "b21ca209532884a7cdcb524e0a6fc2ecb0d33f02": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "e9830f819cce109662937c32ec8eda4505412dd5": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "1aaa69e9cf862e25f7ffc4f3ff1f947f49bed4f7": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "4662514ad71c06846245b6a60fa8193c706bc4a6": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "f43615733201b37f23d926e1a12994d125c4b77e": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "356719542c854c206d7bd20a078f1d458a285c7b": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      }
+    },
+    "https://rss.sciencedirect.com/publication/science/0012821X": {
+      "28dab15e3878507f277b686f09b6da1c0ca52b90": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "d7465bdf8186e64c310e2badccffd2e39ba752bb": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "60c499845918f69b4a467df1535eaa8c3d065075": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "5d017cd9c7e2edb277c7579102f41d1eefc7aee9": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "6c48c4c470af4e1cbd3844d5e38727575944dc39": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "f65bf55bce0416be467b72e18f0fce608e6a5e44": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "52b9c78c4959fa2c047978fb95cb43172f9e33c2": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "0693e79a66d0dfb3ea10b63dd4c014ad360f7ae1": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "8b3140bda08bfa63f56704fb98ab9470a74461e7": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "c350b558fcac3a835b5ae6d85f47dc96e9a46a91": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "89e9c32a41942e8bd57c303e45519e8d77b5e82a": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "3ee0df60b0c75cef2756f722caed2085f706f914": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "6ccda242c61284ccce4f40a9548a2b723dee501b": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "f78e12a4025614e47c94a59a3d17781215dce5d3": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "ee50bf7052a18caa5f0d21255be415994eaa4f55": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "9c14fce567e0c63ef460f71e63453e6ad8b83914": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "73851fa8a1be4f091a54b76a0cd665597aca6036": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "c27a6255dd219affd595ef0bebe3a6cc321d293e": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "cca84c5a2e4845e4742d404502f9e2caa1100720": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "f769895d8388893f07755c8294daabca6ed4f37c": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "cf0452a9f2173c2b069a234598397bf528f2a566": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "39d2930c4dad58779c76c5e524fc8803f5509f79": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "85d53a6de0392f6e369dfd799238f5de622fb154": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "447eb47de1a9ca181b6adb14ad0d21b0024bbb38": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "381d17c22a942229c40aae7d5496f5506daa9061": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "c8123b19dcaf2a605f2fddd11d7b69c70f680b1e": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "37a8035742b73e0048e69e2bab5b44f26baa221a": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "d288e5cd969e0f52d46db21f2b8d45314b557a55": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "5096945dcccf7433bb5e8bb975d12fc190bbea41": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "f1d89bf8f0c8befa17e76a7bad2cf667f1bfd6af": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "0e0490049346f070da9dd6d6536fad66cb3f511e": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "5aba65c0663b150a1883fb99cda8ed036b5b3cbd": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "9194b487e7d184317237e4bb90c55fb223079f8c": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "2c9032b84ae68f57e569b7a877e7b22349769bd1": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "e1d104e1806dea8ad59b9f5d2626f6e3d6bea1a7": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "b84ee5a3a386aab5ad562c847af8ac8bee35fc8e": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "9da5e87c2dd48c0b94fc9b7867da73d4594b2597": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "b3f6198688d5833640f5b81b2fcd483c6a4b3b81": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "cbdec4100704b3d55a1cf1b0ac3cb9b0f555231a": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "b842fca725a199f78619f203b65047184141eab5": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "b8dadaf5ae1a86266ed340eb603119e92cf8e769": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "339e8e19b4269311131842b66352fb189a0b1a27": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      }
+    },
+    "https://rss.sciencedirect.com/publication/science/00137952": {
+      "cde5b18caa9a6eb355070f7d82b01dc80c916fe6": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "7772255d53aecadd095d82950ab2597cbbb24acb": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "dc8e243e297edba713bfb5ec8272434452e7bc81": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "78afbdaefa689d0245ae191816c57d5b6a79de86": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "c9d2fff462d2d76bab7164e6514411995674f347": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "edceb8c8afbd15848e8dcca93af38a867aae48bd": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "ca8074e6c9e4bbd16b93a270455e5e2a4efa4afa": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "a114513ce0eb44bf4d7967753c597cc6362b21b8": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "c3b07c7dbce4fafaf6e0bcf60456335f0f5018bb": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "24ad0859373a5e1e226a47a0198f21a95eaf55e9": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "134654ba4ce3a09eb6f9aa104f8c628ddc486e8c": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "be249da3d10381b67abc1ebcec8cd559cea2de3b": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "f54844bb118ad5b86d5b560ef05df8213ce4d753": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "320b895549113deadbdbd8fd0b77459cb7207ff0": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "bdf3ee8ba2495090908840ea650405f146a571b9": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "86eb78466ec841f54c097582496979bff15e5a79": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "6eeb11cc06ce9aa1374ab26c5006904ea05fff72": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "d3a236c6e215dafccd177282fdef75355eb1f20a": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "2996be08d92b0dd762f848a528c63c38f277fb2a": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "393c491cfdb71cdf9d496373c24636e4abd334a9": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "2ce6e13deb3798354be36535ecd4a41be8f322a4": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "50fa6e8c596a0f10287478818a37acf708f8e06f": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "e1fb3e33266719a5c31d9d615cafd182721dac7d": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "070db8139ac4faa3c7b5800fa36d78a59923049b": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "dc3433838a8792683b8c610011871b403ff24579": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "bf3cc83ecba204a398b3207ad799c4b9608b92eb": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "92be333a93ac1869c3cd2f639849e11fe42c3b65": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "a76f30dab237eeb99584d082d0f6b53edfd98eb9": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "fa2e9db7ce9a7e46ee0e92ae80950b2341fa85d4": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "0c101cb24888a2a5c3951b94d1568877092e72f6": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "9fa5a32f5b21bf50e9869c4992da8e2b0215d5f2": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "b319fe765d07f8e087ed2c9086ac03eed7731906": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "b0df8b06a960ef6ea664eb7ff6a4bfc74452f54c": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "7a043e2eda0609c5b0d306c66eb9a5f139c28d64": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "584ba3120b01639e885aa36703e6ee20fb724233": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "8b7d8f89795d67531a0b52ee874cb19a1afe6046": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "6ba8b975dcda942fe8cfdb004cd2f0d013270778": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "c7bf0de0e685f19c573c5fb2966f16d9bafd6570": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "90109b70b15f527027d9b2cdfc597946a7caca9b": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "d7a41c20a5a2741d56c3866c7041e79a5e101da2": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "5265623f407363c40ed3d5dc85cd7762206460b2": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "f49ee354cc2e63fc676ba13045d06f03110b51dc": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "31fe7e7e18774044c007674367f8b06cbcef36e3": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "544d93e87f7d9cc8188cd1471a7f8c7627b0f05b": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "6e2ba24b5a23e739fc4d49e9338c4c8c2a7a27bf": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "fdd5823f301ad8220c1fc608126e535372295468": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "cb0feeffe78f5f5d09d966c9b4f56c2a21022b91": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "d0476f5311edc40259956f1695d995507bdd2f11": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "9687f01ffafc999ea60ff91bccc1c5a463a044f6": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "48c72c14a855a3d9079bd7418256ffea3d7aef8e": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "619ac2d132ac488313d73a5b353ff3217c325d2a": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "456c5e8449f3040304b3058efa88f8e20e4a6f20": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "23769c82a93293d54f7899b6d7cbbc5645a6a38c": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "cbc3bf95080357ede01cfcc99aa641c1bfa0ed38": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "95a97074417550811288cc8cbcf59f3508f887f3": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "3b7ca92e78e3cb691abde9c3aa229e0eaeb0bac8": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "b77377136724d2b2002bb5ba5e34cfffda2e128c": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "6a88e2116277090864b1e1304d1f45e82fd5a802": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "40384322256c35e6bac17617333636be538566ca": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "c775d952353c354355ef15158d9c5219907295d8": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "889c8d9f04f07c7f46402b296b2cc2e4a4a64faf": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "fdf3f6938daf74557ce5715ee96f1c8c31cde51c": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "728175156c03283db9298817c76f0d229e859cce": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "77726524a11975d4a33956d72d47858be2e80f24": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "44f8168a7cbc5a8eeb9e5de3ad0f293c095459f1": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "ab5ce6fae669c23e19850c217b09fdd98ae4e552": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      },
+      "e07ca425ff2b0ae0ae0faf2a4349e06843dea3a2": {
+        "seenAt": "2026-01-30T17:22:49Z"
+      }
+    },
+    "https://academic.oup.com/rss/site_5282/3148.xml": {
+      "1c2f54133b5ed438f14c0db2a5dff4648908fd37": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "d0d06fc361acf1362e3266a7f683ab7582f942db": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "ecdc7a61c387d2bbef2fd57a421807ba40125029": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "87cdbf417c7d0a4e2eda3ff83b3056be5b604ec2": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "afae4162b71e9bfbfb785f9ec635864bed768c5e": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "6871a59d3931223c95f99a19e6e07a694db8ef5c": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "08ba89d0d25696977374b9ed2517237704834fce": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "4b940cf815229669777d3101030e33fdd7eca123": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "e290f179e47efdfe217a0a80c24fa6b5f711ddde": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "5ced0b097f974528ede1ade554bfe1e9f2fc4bb9": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "a9533f052a0f94a6b514c7b9bb4dfc9c7a74f5a1": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "7ab338e73ed28b0fa0459a3da816779d84dacdb7": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "bfab165dad62e3c668f9bc6b8f5408a3cccbcc72": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "76ae7b4e4ea2450981a62fdf4a68ce2cb65f48b3": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "820b45bea30cb13d053a61b530aa65f6efc57d55": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "f045640a71ac14cbec8a4ae219b723cf4f54ef83": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "f5942b84f7dafec2795163c04943c526cc365bab": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "aa11fe6bf6b4794905df8092c5672475bcfc3b6f": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "4b8423a4839352178a6ac676c920d13c0d9ad846": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "0f6c07491a274b7128c73a5eb62d354f24fa7573": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "ed15ef2ad63a2bae244b18efb2cc8b9f6339e442": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "90bb4d05b4e15b7da46a70fc145cfc66abaa27c6": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "d8bd921f4ff6401077c9b5e36f224136a7b58993": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "808a164774a252ae2a73dc6c68392d8e0fdab9e0": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "42971cf1bd1364dc3a702b140279bcde104e26a7": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "6c0d871db968de661ebaa176104926b1ba29ac96": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "d8fcce5204c6006b38137483cf12a4e7c7e25803": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "2f4c6663c6b42f0c4259fc0a35f826e725b17ba7": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "4974fca660dd60cc488587ff69a67c4c1f5f2934": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "2e93a0ef6755b392f48dc6fb6318c10003405a5b": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "388599cc471a84df79ac7206f6d8cd3ff4424154": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "0d19cbe2840040cef16f13c2318076e15c354c94": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      }
+    },
+    "https://agupubs.onlinelibrary.wiley.com/action/showFeed?jc=19448007&type=etoc&feed=rss": {
+      "7f8be5a0db5d1572abb53582de4344798e9c0240": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "b8781e34315af8d4a601b218c58e00b944c81f90": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "e518effe0b522e9d8517b9fc74c16e4ed99e756d": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "647012707693f87f6e7252b803f2a9aea9b3a86f": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "4e84dd0bf4859c4269edf1238ac030144bd73250": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "7a8ac55c7b3108677fc37b7e79aa88281ac92258": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "8d4c2be2f952b1a9457f36f97a93c3d571fdcefa": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "a2b9a3189e764eaae9dad551f7afdbd5098d58db": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "db4a21a34f283c0e08aa2e21efda35a01b4118ae": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "8cec5055c6011657c466e68f732fe2970d02bc68": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "44b3be5c7509f1251b9ef2ab0f357192dbc973b3": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "f1d53968660756caa19b38979a94098ad7fdfd89": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "8aa36f1a45640bfc352bf8893b73701aa3223354": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "b4c05081764349b0353cfa39bacfc36a9d942d51": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "cec6ca213d67f505d7694a51129c6d13bde2025d": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "f3935ee12dbd06b0751d2af9e1352e43bcb22b13": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "c25c45ac20dda81f936872dddc727421f9122552": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "9a554ae506d5657162b6b8ac45a691e303ee55c8": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "30112938423f1f9bc926c5f3d0eec85fe18c8723": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "1b209db3749a7055abf29da35d4c28360149a045": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      },
+      "4f9608bdc5b71fc80891d2acd236b89e0cc414a3": {
+        "seenAt": "2026-01-30T17:22:50Z"
+      }
+    },
+    "https://pubs.geoscienceworld.org/rss/site_143/advanceAccess_72.xml": {
+      "83679f383a946e7f55c114a0b55485dcd847345c": {
+        "seenAt": "2026-01-30T17:22:51Z"
+      },
+      "fe780da70cb93ef959c4c54355b84614fc40e7e4": {
+        "seenAt": "2026-01-30T17:22:51Z"
+      },
+      "5cad4b0332ca6cd5edec4df585ac7b932e5ff22c": {
+        "seenAt": "2026-01-30T17:22:51Z"
+      }
+    },
+    "https://agupubs.onlinelibrary.wiley.com/action/showFeed?jc=21699356&type=etoc&feed=rss": {
+      "1f28c3dee744f5c1ae8855fde62cde32ee20efad": {
+        "seenAt": "2026-01-30T17:22:51Z"
+      },
+      "5047ff833249114dced3ea8ffc67bb1d88649f81": {
+        "seenAt": "2026-01-30T17:22:51Z"
+      },
+      "ed14be1c4268989e8ad1da66f5a77f7d706a2438": {
+        "seenAt": "2026-01-30T17:22:51Z"
+      },
+      "61e1c9ed7efad67dddbe151010fc7bda7c1ca903": {
+        "seenAt": "2026-01-30T17:22:51Z"
+      }
+    },
+    "https://www.nature.com/ngeo.rss": {},
+    "https://agupubs.onlinelibrary.wiley.com/action/showFeed?jc=19449208&type=etoc&feed=rss": {
+      "d50f54c967045ef31899dbd514b1ae6edeaa3d6f": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      },
+      "e2ada87813d04ba09634c5206f745457aa5215d0": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      },
+      "5050eb599a0dd61a1c9a4175659237074403c7b7": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      },
+      "abde107750105e3bc2f8a759f5e2f69a2db390d5": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      },
+      "6ee58f58090fb0b89a00d95f38eb6c5222c9f27e": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      }
+    },
+    "https://agupubs.onlinelibrary.wiley.com/action/showFeed?jc=19449194&type=etoc&feed=rss": {
+      "df6f72092033205b0f2e84e6b56d337b69dca9a3": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      },
+      "0b75ac0344b99735cffe33e83724faf4664ab9f9": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      },
+      "1b91702d23255f19b56cd64db6ab4011af0aab00": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      },
+      "cf9be7971090b4f36e22282cedf82d44b1e7b339": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      },
+      "116b9e469b15b20246a4c4bd0bc1b75f2b32c369": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      },
+      "36ffa35c50d1cfae4571aef787169e41788d977f": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      },
+      "7a0af22040a288dfd046f8c74cd8837cc8fbf1d0": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      },
+      "c83218939cd6a24e0df22464d01afe46b710e094": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      },
+      "8df0d21177f1346ff6d32e8b7ec3497f112451db": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      },
+      "f4c3e96e71e36f0a25c7ed08e26d9dff624e1ed9": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      },
+      "959e40a631695a88274a60684e494e94e2b2c6c3": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      },
+      "7b4801c033531655a21df7ba93e9a3c88185c68f": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      },
+      "b16e34a56118c1f24ec74eb2ed301a04d0699320": {
+        "seenAt": "2026-01-30T17:22:52Z"
+      }
+    },
+    "https://rss.sciencedirect.com/publication/science/00401951": {
+      "cbf5f5817e45c33d71dc3fb6b25c75f91340162b": {
+        "seenAt": "2026-01-30T17:22:53Z"
+      },
+      "290f621492e4d886e4fc043219c843a4a6d08a51": {
+        "seenAt": "2026-01-30T17:22:53Z"
+      },
+      "f0817e52cd15ba9e3d533387ff11c46b00a9a98c": {
+        "seenAt": "2026-01-30T17:22:53Z"
+      },
+      "80b2cd59f49850a8978d24d4b3121d5dba223c6e": {
+        "seenAt": "2026-01-30T17:22:53Z"
+      },
+      "6f68a6513e9e6ed416f5296426635b66940eedcb": {
+        "seenAt": "2026-01-30T17:22:53Z"
+      },
+      "a58a92dab06824511a1aadefebe08385c95c676a": {
+        "seenAt": "2026-01-30T17:22:53Z"
+      },
+      "57b2e261a4702b4559cefa93a802abb85bc16f33": {
+        "seenAt": "2026-01-30T17:22:53Z"
+      },
+      "71470fa73a05574255e49efe30c9cd976016025c": {
+        "seenAt": "2026-01-30T17:22:53Z"
+      },
+      "0c462d5d301245f316ab91dd5d093939429adee3": {
+        "seenAt": "2026-01-30T17:22:53Z"
+      },
+      "1db49cd42eaba0be09ced18410153f021c38efaf": {
+        "seenAt": "2026-01-30T17:22:53Z"
+      },
+      "8563dc91483f745d6fbae612e209f654b95c3d28": {
+        "seenAt": "2026-01-30T17:22:53Z"
+      },
+      "2d1441de7fc5d75db8983c47d4fdfcf0fe024923": {
+        "seenAt": "2026-01-30T17:22:53Z"
+      },
+      "9dfda1a727c62d2203b2f895c6b71b674c6748f3": {
+        "seenAt": "2026-01-30T17:22:53Z"
+      },
+      "c67a827bac39fc9adb7622e004566f4b056427e3": {
+        "seenAt": "2026-01-30T17:22:53Z"
+      }
+    }
+  },
+  "lastRunAt": "2026-01-30T17:22:53Z"
+}

@@ -1,0 +1,14 @@
+https://pubs.geoscienceworld.org/rss/site_131/advanceAccess_66.xml
+https://pubs.geoscienceworld.org/rss/site_129/advanceAccess_65.xml
+https://journals.sagepub.com/action/showFeed?ui=0&mi=ehikzz&ai=2b4&jc=eqs&type=axatoc&feed=rss
+https://rss.sciencedirect.com/publication/science/00983004
+https://rss.sciencedirect.com/publication/science/0012821X
+https://rss.sciencedirect.com/publication/science/00137952
+https://academic.oup.com/rss/site_5282/3148.xml
+https://agupubs.onlinelibrary.wiley.com/action/showFeed?jc=19448007&type=etoc&feed=rss
+https://pubs.geoscienceworld.org/rss/site_143/advanceAccess_72.xml
+https://agupubs.onlinelibrary.wiley.com/action/showFeed?jc=21699356&type=etoc&feed=rss
+https://www.nature.com/ngeo.rss
+https://agupubs.onlinelibrary.wiley.com/action/showFeed?jc=19449208&type=etoc&feed=rss
+https://agupubs.onlinelibrary.wiley.com/action/showFeed?jc=19449194&type=etoc&feed=rss
+https://rss.sciencedirect.com/publication/science/00401951

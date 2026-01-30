@@ -1,0 +1,254 @@
+#!/usr/bin/env python3
+"""Daily stock/ETF watcher using Yahoo Finance chart endpoint.
+
+Features:
+- % change vs previous close
+- skips sending if no new trading day since last run (per market)
+- highlights biggest movers by abs % change
+- detects cross above/below moving averages (20/60/240 SMA by default)
+
+Outputs a single JSON object to stdout.
+
+Note: Yahoo Finance is an unofficial endpoint; may rate-limit.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import sys
+import time
+import urllib.request
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
+STATE_PATH = os.path.join(BASE_DIR, "state.json")
+
+
+def utc_now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def load_json(path: str, default):
+    if not os.path.exists(path):
+        return default
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_json(path: str, obj) -> None:
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(obj, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, path)
+
+
+def yahoo_chart(symbol: str, range_: str = "400d", interval: str = "1d") -> tuple[str, dict]:
+    """Fetch Yahoo chart data.
+
+    Returns (resolvedSymbol, result).
+
+    For Taiwan tickers, Yahoo sometimes uses .TWO (OTC) instead of .TW; we fallback.
+    """
+
+    def fetch(sym: str) -> dict:
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?range={range_}&interval={interval}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (OpenClaw stock watcher)"})
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            raw = resp.read()
+        data = json.loads(raw)
+        err = data.get("chart", {}).get("error")
+        if err:
+            raise RuntimeError(f"Yahoo error for {sym}: {err}")
+        return data["chart"]["result"][0]
+
+    try:
+        return symbol, fetch(symbol)
+    except urllib.error.HTTPError as e:
+        # OTC fallback for Taiwan
+        if e.code == 404 and symbol.endswith(".TW"):
+            alt = symbol[:-3] + ".TWO"
+            return alt, fetch(alt)
+        raise
+
+
+def last_two_closes(result: dict) -> tuple[tuple[int, float], tuple[int, float]]:
+    ts = result.get("timestamp") or []
+    closes = (result.get("indicators", {}).get("quote", [{}])[0].get("close")) or []
+    pairs = []
+    for t, c in zip(ts, closes):
+        if c is None:
+            continue
+        pairs.append((int(t), float(c)))
+    if len(pairs) < 2:
+        raise RuntimeError("Not enough close data")
+    return pairs[-2], pairs[-1]
+
+
+def sma(values: list[float], window: int) -> list[float | None]:
+    out: list[float | None] = [None] * len(values)
+    if window <= 0:
+        return out
+    s = 0.0
+    for i, v in enumerate(values):
+        s += v
+        if i >= window:
+            s -= values[i - window]
+        if i >= window - 1:
+            out[i] = s / window
+    return out
+
+
+def compute_ma_cross(closes: list[float], window: int) -> dict | None:
+    ma = sma(closes, window)
+    if len(closes) < window + 2:
+        return None
+    i2 = len(closes) - 1
+    i1 = i2 - 1
+    if ma[i1] is None or ma[i2] is None:
+        return None
+
+    prev_close, curr_close = closes[i1], closes[i2]
+    prev_ma, curr_ma = float(ma[i1]), float(ma[i2])
+
+    crossed_up = prev_close <= prev_ma and curr_close > curr_ma
+    crossed_down = prev_close >= prev_ma and curr_close < curr_ma
+    if not (crossed_up or crossed_down):
+        return None
+    return {
+        "window": window,
+        "direction": "up" if crossed_up else "down",
+        "prevClose": prev_close,
+        "currClose": curr_close,
+        "prevMA": prev_ma,
+        "currMA": curr_ma,
+    }
+
+
+def to_local_date(ts: int, tz_name: str) -> str:
+    tz = ZoneInfo(tz_name)
+    return datetime.fromtimestamp(ts, tz=tz).date().isoformat()
+
+
+def run_market(market_key: str, tickers: list[str], ma_cfg: dict, highlights_top_n: int, state: dict) -> dict:
+    items = []
+    errors = []
+    market_date = None
+    market_tz = None
+
+    for sym in tickers:
+        try:
+            resolved_sym, res = yahoo_chart(sym)
+            meta = res.get("meta", {})
+            market_tz = meta.get("exchangeTimezoneName") or market_tz or "UTC"
+
+            (t_prev, c_prev), (t_last, c_last) = last_two_closes(res)
+            d_last = to_local_date(t_last, market_tz)
+
+            # capture a single market_date (latest among tickers)
+            if market_date is None or d_last > market_date:
+                market_date = d_last
+
+            pct = (c_last - c_prev) / c_prev * 100.0
+
+            # For moving averages, use all non-null closes
+            ts = res.get("timestamp") or []
+            closes_raw = (res.get("indicators", {}).get("quote", [{}])[0].get("close")) or []
+            closes = [float(c) for c in closes_raw if c is not None]
+
+            signals = {}
+            for label, win in ma_cfg.items():
+                cross = compute_ma_cross(closes, int(win))
+                if cross:
+                    signals[label] = cross
+
+            items.append({
+                "symbol": sym,
+                "resolvedSymbol": resolved_sym,
+                "name": meta.get("shortName") or meta.get("longName") or sym,
+                "currency": meta.get("currency"),
+                "exchange": meta.get("exchangeName") or meta.get("fullExchangeName"),
+                "marketTz": market_tz,
+                "date": d_last,
+                "close": c_last,
+                "prevClose": c_prev,
+                "pct": pct,
+                "signals": signals,
+            })
+
+        except Exception as e:
+            errors.append({"symbol": sym, "error": f"{type(e).__name__}: {e}"})
+
+    # Determine whether this market has a new trading day since last sent
+    last_sent = (state.get("lastSent", {}) or {}).get(market_key)
+    should_send = bool(market_date) and (last_sent != market_date)
+
+    # Sort for highlights
+    movers = sorted([it for it in items if it.get("pct") is not None], key=lambda x: abs(x["pct"]), reverse=True)
+    highlights = movers[:highlights_top_n]
+
+    # Extract MA crosses
+    crosses = []
+    for it in items:
+        for label, cross in (it.get("signals") or {}).items():
+            crosses.append({
+                "symbol": it["symbol"],
+                "name": it.get("name"),
+                "label": label,
+                **cross,
+            })
+
+    report = {
+        "market": market_key,
+        "marketDate": market_date,
+        "marketTz": market_tz,
+        "shouldSend": should_send,
+        "count": len(items),
+        "items": items,
+        "highlights": highlights,
+        "crosses": crosses,
+        "errors": errors,
+    }
+
+    if should_send:
+        state.setdefault("lastSent", {})[market_key] = market_date
+
+    return report
+
+
+def main() -> int:
+    cfg = load_json(CONFIG_PATH, {})
+    state = load_json(STATE_PATH, {"version": 1, "lastSent": {}})
+
+    ma_cfg = (cfg.get("movingAverages") or {"month": 20, "quarter": 60, "year": 240})
+    top_n = int((cfg.get("highlights") or {}).get("topN", 6))
+
+    # Optional: --market tw|us (so separate schedules don't interfere)
+    markets = ["tw", "us"]
+    if "--market" in sys.argv:
+        i = sys.argv.index("--market")
+        if i + 1 < len(sys.argv):
+            markets = [sys.argv[i + 1]]
+
+    out = {
+        "runAt": utc_now_iso(),
+        "reports": [],
+    }
+
+    for market_key in markets:
+        if market_key not in cfg:
+            continue
+        tickers = cfg[market_key].get("tickers") or []
+        rep = run_market(market_key, tickers, ma_cfg, top_n, state)
+        rep["runLabel"] = cfg[market_key].get("runLabel")
+        out["reports"].append(rep)
+
+    save_json(STATE_PATH, state)
+    print(json.dumps(out, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
