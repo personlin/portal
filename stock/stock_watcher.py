@@ -18,6 +18,7 @@ import json
 import os
 import sys
 import time
+import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
@@ -54,7 +55,8 @@ def yahoo_chart(symbol: str, range_: str = "400d", interval: str = "1d") -> tupl
     """
 
     def fetch(sym: str) -> dict:
-        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?range={range_}&interval={interval}"
+        sym_q = urllib.parse.quote(sym, safe="")
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym_q}?range={range_}&interval={interval}"
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (OpenClaw stock watcher)"})
         with urllib.request.urlopen(req, timeout=25) as resp:
             raw = resp.read()
@@ -132,13 +134,44 @@ def to_local_date(ts: int, tz_name: str) -> str:
     return datetime.fromtimestamp(ts, tz=tz).date().isoformat()
 
 
-def run_market(market_key: str, tickers: list[str], ma_cfg: dict, highlights_top_n: int, state: dict) -> dict:
+def yahoo_quote_batch(symbols: list[str]) -> dict[str, dict]:
+    """Fetch quote metadata (e.g., marketCap) for many symbols at once.
+
+    Best-effort: if blocked/rate-limited, returns empty dict and we fall back.
+    """
+    if not symbols:
+        return {}
+    try:
+        # Yahoo recommends <= 200 symbols; we're far below.
+        sym_str = ",".join(symbols)
+        url = f"https://query1.finance.yahoo.com/v7/finance/quote?symbols={urllib.parse.quote(sym_str)}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (OpenClaw stock watcher)"})
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            raw = resp.read()
+        data = json.loads(raw)
+        out: dict[str, dict] = {}
+        for q in (data.get("quoteResponse", {}) or {}).get("result", []) or []:
+            sym = q.get("symbol")
+            if sym:
+                out[sym] = q
+        return out
+    except Exception:
+        return {}
+
+
+def run_market(market_key: str, indices: list[str], tickers: list[str], ma_cfg: dict, highlights_top_n: int, state: dict) -> dict:
     items = []
     errors = []
     market_date = None
     market_tz = None
 
-    for sym in tickers:
+    # Build a list including indices for chart pulls
+    all_syms = list(indices or []) + list(tickers or [])
+
+    # Batch quote metadata for market cap sorting (best-effort)
+    quote_meta = yahoo_quote_batch(all_syms)
+
+    for sym in all_syms:
         try:
             resolved_sym, res = yahoo_chart(sym)
             meta = res.get("meta", {})
@@ -147,14 +180,12 @@ def run_market(market_key: str, tickers: list[str], ma_cfg: dict, highlights_top
             (t_prev, c_prev), (t_last, c_last) = last_two_closes(res)
             d_last = to_local_date(t_last, market_tz)
 
-            # capture a single market_date (latest among tickers)
+            # capture a single market_date (latest among symbols)
             if market_date is None or d_last > market_date:
                 market_date = d_last
 
             pct = (c_last - c_prev) / c_prev * 100.0
 
-            # For moving averages, use all non-null closes
-            ts = res.get("timestamp") or []
             closes_raw = (res.get("indicators", {}).get("quote", [{}])[0].get("close")) or []
             closes = [float(c) for c in closes_raw if c is not None]
 
@@ -164,17 +195,22 @@ def run_market(market_key: str, tickers: list[str], ma_cfg: dict, highlights_top
                 if cross:
                     signals[label] = cross
 
+            q = quote_meta.get(resolved_sym) or quote_meta.get(sym) or {}
+            market_cap = q.get("marketCap")
+
             items.append({
                 "symbol": sym,
                 "resolvedSymbol": resolved_sym,
-                "name": meta.get("shortName") or meta.get("longName") or sym,
-                "currency": meta.get("currency"),
-                "exchange": meta.get("exchangeName") or meta.get("fullExchangeName"),
+                "name": meta.get("shortName") or meta.get("longName") or q.get("shortName") or sym,
+                "currency": meta.get("currency") or q.get("currency"),
+                "exchange": meta.get("exchangeName") or meta.get("fullExchangeName") or q.get("fullExchangeName"),
                 "marketTz": market_tz,
                 "date": d_last,
                 "close": c_last,
                 "prevClose": c_prev,
                 "pct": pct,
+                "marketCap": market_cap,
+                "isIndex": sym in (indices or []),
                 "signals": signals,
             })
 
@@ -185,8 +221,12 @@ def run_market(market_key: str, tickers: list[str], ma_cfg: dict, highlights_top
     last_sent = (state.get("lastSent", {}) or {}).get(market_key)
     should_send = bool(market_date) and (last_sent != market_date)
 
-    # Sort for highlights
-    movers = sorted([it for it in items if it.get("pct") is not None], key=lambda x: abs(x["pct"]), reverse=True)
+    # Sort for highlights (exclude indices)
+    movers = sorted(
+        [it for it in items if it.get("pct") is not None and not it.get("isIndex")],
+        key=lambda x: abs(x["pct"]),
+        reverse=True,
+    )
     highlights = movers[:highlights_top_n]
 
     # Extract MA crosses
@@ -200,13 +240,25 @@ def run_market(market_key: str, tickers: list[str], ma_cfg: dict, highlights_top
                 **cross,
             })
 
+    # Market-cap sort for display (descending; unknown caps at end)
+    def cap_key(it: dict):
+        cap = it.get("marketCap")
+        return (-int(cap), it.get("symbol")) if isinstance(cap, (int, float)) else (10**30, it.get("symbol"))
+
+    items_sorted = sorted(items, key=cap_key)
+
+    # Split indices for nicer formatting downstream
+    indices_items = [it for it in items_sorted if it.get("isIndex")]
+    securities_items = [it for it in items_sorted if not it.get("isIndex")]
+
     report = {
         "market": market_key,
         "marketDate": market_date,
         "marketTz": market_tz,
         "shouldSend": should_send,
         "count": len(items),
-        "items": items,
+        "indices": indices_items,
+        "items": securities_items,
         "highlights": highlights,
         "crosses": crosses,
         "errors": errors,
@@ -240,8 +292,9 @@ def main() -> int:
     for market_key in markets:
         if market_key not in cfg:
             continue
+        indices = cfg[market_key].get("indices") or []
         tickers = cfg[market_key].get("tickers") or []
-        rep = run_market(market_key, tickers, ma_cfg, top_n, state)
+        rep = run_market(market_key, indices, tickers, ma_cfg, top_n, state)
         rep["runLabel"] = cfg[market_key].get("runLabel")
         out["reports"].append(rep)
 

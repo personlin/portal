@@ -2,11 +2,47 @@
   "tz": "Asia/Taipei",
   "us": {
     "runLabel": "US",
-    "tickers": ["AAPL","AMZN","AVGO","META","GOOG","MSFT","NFLX","NVDA","PLTR","QQQ","SE","TQQQ","TSLA","VTI","TSM"]
+    "indices": ["^DJI", "^GSPC", "^IXIC", "^SOX"],
+    "tickers": [
+      "AAPL",
+      "AMZN",
+      "AVGO",
+      "META",
+      "GOOG",
+      "MSFT",
+      "NFLX",
+      "NVDA",
+      "PLTR",
+      "QQQ",
+      "SE",
+      "TQQQ",
+      "TSLA",
+      "VTI",
+      "TSM"
+    ]
   },
   "tw": {
     "runLabel": "TW",
-    "tickers": ["0050.TW","006208.TW","00692.TW","00733.TW","00876.TW","00885.TW","00904.TW","00830.TW","2308.TW","2330.TW","3443.TW","3529.TW","3661.TW","5274.TW","6533.TW","6561.TW","6643.TW","8299.TW"]
+    "tickers": [
+      "0050.TW",
+      "006208.TW",
+      "00692.TW",
+      "00733.TW",
+      "00876.TW",
+      "00885.TW",
+      "00904.TW",
+      "00830.TW",
+      "2308.TW",
+      "2330.TW",
+      "3443.TW",
+      "3529.TW",
+      "3661.TW",
+      "5274.TW",
+      "6533.TW",
+      "6561.TW",
+      "6643.TW",
+      "8299.TW"
+    ]
   },
   "movingAverages": {
     "month": 20,
