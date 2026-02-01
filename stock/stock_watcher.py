@@ -198,10 +198,21 @@ def run_market(market_key: str, indices: list[str], tickers: list[str], ma_cfg: 
             q = quote_meta.get(resolved_sym) or quote_meta.get(sym) or {}
             market_cap = q.get("marketCap")
 
+            name = meta.get("shortName") or meta.get("longName") or q.get("shortName") or sym
+
+            # Build a friendly display label (esp. for Taiwan tickers)
+            display = name
+            code = None
+            if isinstance(sym, str) and (sym.endswith(".TW") or sym.endswith(".TWO")):
+                code = sym.split(".")[0]
+                display = f"{name}({code})"
+
             items.append({
                 "symbol": sym,
                 "resolvedSymbol": resolved_sym,
-                "name": meta.get("shortName") or meta.get("longName") or q.get("shortName") or sym,
+                "name": name,
+                "code": code,
+                "display": display,
                 "currency": meta.get("currency") or q.get("currency"),
                 "exchange": meta.get("exchangeName") or meta.get("fullExchangeName") or q.get("fullExchangeName"),
                 "marketTz": market_tz,
