@@ -1,0 +1,14 @@
+{
+  "tz": "Asia/Taipei",
+  "coins": [
+    {"id": "bitcoin", "symbol": "BTC"},
+    {"id": "ethereum", "symbol": "ETH"},
+    {"id": "solana", "symbol": "SOL"}
+  ],
+  "thresholds": {
+    "pct_1h": 3.0,
+    "pct_24h": 8.0
+  },
+  "cooldownMinutes": 30,
+  "source": "coingecko"
+}
