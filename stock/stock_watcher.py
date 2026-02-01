@@ -159,7 +159,7 @@ def yahoo_quote_batch(symbols: list[str]) -> dict[str, dict]:
         return {}
 
 
-def run_market(market_key: str, indices: list[str], tickers: list[str], ma_cfg: dict, highlights_top_n: int, state: dict) -> dict:
+def run_market(market_key: str, indices: list[str], tickers: list[str], ma_cfg: dict, highlights_top_n: int, state: dict, name_map: dict | None = None) -> dict:
     items = []
     errors = []
     market_date = None
@@ -205,7 +205,11 @@ def run_market(market_key: str, indices: list[str], tickers: list[str], ma_cfg: 
             code = None
             if isinstance(sym, str) and (sym.endswith(".TW") or sym.endswith(".TWO")):
                 code = sym.split(".")[0]
-                display = f"{name}({code})"
+                tw_name = None
+                if isinstance(name_map, dict):
+                    tw_name = name_map.get(code)
+                display_name = tw_name or name
+                display = f"{display_name}({code})"
 
             items.append({
                 "symbol": sym,
@@ -231,6 +235,12 @@ def run_market(market_key: str, indices: list[str], tickers: list[str], ma_cfg: 
     # Determine whether this market has a new trading day since last sent
     last_sent = (state.get("lastSent", {}) or {}).get(market_key)
     should_send = bool(market_date) and (last_sent != market_date)
+
+    # Extra guard for TW: only send if today actually had a close (i.e., marketDate == today's date in Asia/Taipei)
+    if market_key == "tw" and market_date:
+        today_tpe = datetime.now(ZoneInfo("Asia/Taipei")).date().isoformat()
+        if market_date != today_tpe:
+            should_send = False
 
     # Sort for highlights (exclude indices)
     movers = sorted(
@@ -305,7 +315,17 @@ def main() -> int:
             continue
         indices = cfg[market_key].get("indices") or []
         tickers = cfg[market_key].get("tickers") or []
-        rep = run_market(market_key, indices, tickers, ma_cfg, top_n, state)
+
+        name_map = None
+        if market_key == "tw":
+            p = cfg[market_key].get("nameMapPath")
+            if p and os.path.exists(p):
+                try:
+                    name_map = load_json(p, {})
+                except Exception:
+                    name_map = None
+
+        rep = run_market(market_key, indices, tickers, ma_cfg, top_n, state, name_map=name_map)
         rep["runLabel"] = cfg[market_key].get("runLabel")
         out["reports"].append(rep)
 

@@ -23,6 +23,7 @@
   },
   "tw": {
     "runLabel": "TW",
+    "nameMapPath": "/home/person/.openclaw/workspace/stock/tw_name_map.json",
     "tickers": [
       "0050.TW",
       "006208.TW",
