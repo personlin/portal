@@ -1,0 +1,13 @@
+{
+  "account": "p0937087703@gmail.com",
+  "imap": {
+    "host": "imap.gmail.com",
+    "port": 993,
+    "mailbox": "INBOX"
+  },
+  "auth": {
+    "appPasswordFile": "/home/person/.openclaw/credentials/gmail-p0937087703-app-password.txt"
+  },
+  "maxMessages": 30,
+  "maxBodyBytes": 30000
+}
