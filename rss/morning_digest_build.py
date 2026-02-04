@@ -6,7 +6,7 @@ Prints JSON:
 {
   runAt, dateTaipei,
   telegram: {text},
-  email: {to, from, subject, text}
+  email: {to, from, subject, text, html}
 }
 
 No external deps.
@@ -111,6 +111,21 @@ def fmt_eq(eq_json: dict, limit: int) -> str:
     return "\n".join(lines)
 
 
+def html_escape(s: str) -> str:
+    return (
+        s.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&#39;")
+    )
+
+
+def linkify(url: str) -> str:
+    u = html_escape(url)
+    return f'<a href="{u}" style="color:#2563eb; text-decoration:none;">{u}</a>'
+
+
 def main() -> int:
     date_tpe = taipei_date()
 
@@ -190,6 +205,143 @@ def main() -> int:
 
     email_text = "\n".join(e_lines)
 
+    # Email HTML (styled)
+    rss_count_s = str(rss_count or 0)
+    gist_url_s = str(gist_url or "")
+
+    # Build HTML blocks
+    crypto_rows = []
+    for it in (crypto.get("items") or []):
+        sym = html_escape(str(it.get("symbol") or ""))
+        price = it.get("price")
+        p1 = it.get("pct_1h")
+        p24 = it.get("pct_24h")
+
+        def pct_badge(p):
+            if p is None:
+                return '<span style="color:#6b7280;">—</span>'
+            color = "#16a34a" if p > 0 else ("#dc2626" if p < 0 else "#6b7280")
+            sign = "+" if p > 0 else ""
+            return f'<span style="color:{color}; font-weight:700;">{sign}{p:.1f}%</span>'
+
+        def pr(p):
+            if p is None:
+                return "—"
+            if p >= 1000:
+                return f"${p:,.0f}"
+            if p >= 1:
+                return f"${p:,.2f}"
+            return f"${p:.6f}"
+
+        crypto_rows.append(
+            f"<tr>"
+            f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb; font-weight:700;'>{sym}</td>"
+            f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:right;'>{html_escape(pr(price))}</td>"
+            f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:right;'>{pct_badge(p1)}</td>"
+            f"<td style='padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:right;'>{pct_badge(p24)}</td>"
+            f"</tr>"
+        )
+
+    eq_items = eq.get("items") or []
+    if not eq_items:
+        eq_html = "<div style='color:#6b7280;'>今日無重大地震（USGS significant_day）</div>"
+    else:
+        lis = []
+        for it in eq_items[:10]:
+            mag = it.get("mag")
+            place = html_escape(str(it.get("place") or ""))
+            tpe = html_escape(str(it.get("timeTaipei") or ""))
+            link = str(it.get("link") or "")
+            m = f"M{mag:.1f}" if isinstance(mag, (int, float)) else "M?"
+            lis.append(
+                f"<li style='margin:0 0 10px 0;'>"
+                f"<div style='font-weight:700;'>{html_escape(m)} {place}</div>"
+                f"<div style='color:#6b7280; font-size:12px;'>{tpe}</div>"
+                f"<div style='margin-top:3px;'>{linkify(link) if link else ''}</div>"
+                f"</li>"
+            )
+        eq_html = "<ul style='padding-left:18px; margin:10px 0 0 0;'>" + "".join(lis) + "</ul>"
+
+    if rw_new == 0:
+        rw_html = "<div style='color:#6b7280;'>今日無更新</div>"
+    else:
+        lis = []
+        for it in summarize_rweekly(rw_items, limit=10):
+            title = html_escape(it.get("title") or "")
+            link = str(it.get("link") or "")
+            summ = html_escape(it.get("summary") or "")
+            lis.append(
+                f"<li style='margin:0 0 12px 0;'>"
+                f"<div style='font-weight:700;'>{title}</div>"
+                f"<div style='margin-top:3px;'>{linkify(link) if link else ''}</div>"
+                + (f"<div style='margin-top:4px; color:#374151;'>{summ}</div>" if summ else "")
+                + "</li>"
+            )
+        rw_html = (
+            f"<div style='color:#111827; margin-top:6px;'>今日新增 <b>{rw_new}</b> 則（列出前 10 則）</div>"
+            + "<ul style='padding-left:18px; margin:10px 0 0 0;'>"
+            + "".join(lis)
+            + "</ul>"
+        )
+
+    email_html = f"""
+<!doctype html>
+<html>
+<head>
+  <meta charset='utf-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1'>
+  <title>早安彙整 {html_escape(date_tpe)}</title>
+</head>
+<body style="margin:0; padding:0; background:#f3f4f6; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans TC','PingFang TC','Microsoft JhengHei',Arial,sans-serif;">
+  <div style="max-width:760px; margin:0 auto; padding:18px;">
+    <div style="background:#111827; color:#fff; padding:18px 18px; border-radius:12px;">
+      <div style="font-size:22px; font-weight:800;">早安彙整</div>
+      <div style="font-size:14px; opacity:.9; margin-top:4px;">{html_escape(date_tpe)}（Asia/Taipei）</div>
+    </div>
+
+    <div style="background:#fff; padding:16px 18px; border-radius:12px; margin-top:12px; border:1px solid #e5e7eb;">
+      <div style="font-size:16px; font-weight:800; color:#111827;">[1] 期刊 RSS（GeoSci）</div>
+      <div style="margin-top:8px; color:#111827;">今日新增：<b>{html_escape(rss_count_s)}</b> 則</div>
+      <div style="margin-top:6px;">完整內容（Secret Gist）：{linkify(gist_url_s) if gist_url_s else ''}</div>
+    </div>
+
+    <div style="background:#fff; padding:16px 18px; border-radius:12px; margin-top:12px; border:1px solid #e5e7eb;">
+      <div style="font-size:16px; font-weight:800; color:#111827;">[2] 加密貨幣</div>
+      <div style="margin-top:10px; overflow-x:auto;">
+        <table style="border-collapse:collapse; width:100%; min-width:520px;">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding:8px 10px; border-bottom:2px solid #e5e7eb; color:#374151; font-size:12px;">幣別</th>
+              <th style="text-align:right; padding:8px 10px; border-bottom:2px solid #e5e7eb; color:#374151; font-size:12px;">價格</th>
+              <th style="text-align:right; padding:8px 10px; border-bottom:2px solid #e5e7eb; color:#374151; font-size:12px;">1h</th>
+              <th style="text-align:right; padding:8px 10px; border-bottom:2px solid #e5e7eb; color:#374151; font-size:12px;">24h</th>
+            </tr>
+          </thead>
+          <tbody>
+            {''.join(crypto_rows) if crypto_rows else '<tr><td colspan="4" style="padding:10px; color:#6b7280;">（無資料）</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="background:#fff; padding:16px 18px; border-radius:12px; margin-top:12px; border:1px solid #e5e7eb;">
+      <div style="font-size:16px; font-weight:800; color:#111827;">[3] 地震（USGS Significant past day）</div>
+      {eq_html}
+    </div>
+
+    <div style="background:#fff; padding:16px 18px; border-radius:12px; margin-top:12px; border:1px solid #e5e7eb;">
+      <div style="font-size:16px; font-weight:800; color:#111827;">[4] RWeekly（R 語言）</div>
+      {rw_html}
+    </div>
+
+    <div style="color:#6b7280; font-size:12px; margin-top:12px; padding:0 6px;">
+      產生時間（UTC）：{html_escape(utc_now_iso())}
+    </div>
+  </div>
+</body>
+</html>
+"""
+
     out = {
         "runAt": utc_now_iso(),
         "dateTaipei": date_tpe,
@@ -199,6 +351,7 @@ def main() -> int:
             "to": EMAIL_TO,
             "subject": f"早安彙整 {date_tpe}",
             "text": email_text,
+            "html": email_html,
         },
     }
 
