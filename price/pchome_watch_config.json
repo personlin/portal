@@ -1,0 +1,8 @@
+{
+  "url": "https://24h.pchome.com.tw/prod/DYBADA-A900JCN8H",
+  "threshold": 2490,
+  "productId": "DYBADA-A900JCN8H",
+  "label": "PChome 商品 DYBADA-A900JCN8H",
+  "checkEveryMinutes": 5,
+  "cooldownMinutes": 360
+}
