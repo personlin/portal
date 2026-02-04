@@ -28,7 +28,7 @@ RSS_WATCHER = os.path.join(BASE_DIR, "rss_watcher.py")
 RSS_ENRICH = os.path.join(BASE_DIR, "rss_enrich.py")
 RSS_TO_GIST = os.path.join(BASE_DIR, "rss_to_gist.py")
 EQ_DIGEST = os.path.join(BASE_DIR, "earthquake_digest.py")
-RWEEKLY = os.path.join(BASE_DIR, "rweekly_watcher.py")
+TECH_RPI = os.path.join(BASE_DIR, "technews_rpi_watcher.py")
 CRYPTO = os.path.join(WORKSPACE, "crypto", "crypto_watcher.py")
 
 EMAIL_FROM = "p0937087703@gmail.com"
@@ -153,10 +153,10 @@ def main() -> int:
     # 3) Earthquake
     eq = run_json(["python3", EQ_DIGEST])
 
-    # 4) RWeekly
-    rw = run_json(["python3", RWEEKLY])
-    rw_new = int(rw.get("newCount") or 0)
-    rw_items = rw.get("newItems") or []
+    # 4) Tech news (Raspberry Pi) — daily
+    rpi = run_json(["python3", TECH_RPI])
+    rpi_new = int(rpi.get("newCount") or 0)
+    rpi_items = rpi.get("newItems") or []
 
     # Telegram (concise)
     t_lines = [
@@ -170,10 +170,12 @@ def main() -> int:
         "地震（USGS 重大，近 24h）",
         fmt_eq(eq, limit=3),
     ]
-    if rw_new == 0:
-        t_lines += ["", "RWeekly：今日無更新"]
+    if rpi_new == 0:
+        t_lines += ["", "科技新聞（Raspberry Pi）：今日無更新"]
     else:
-        t_lines += ["", f"RWeekly：{rw_new} 則更新", "（詳見 Email）"]
+        # keep Telegram short
+        top = rpi_items[0] if rpi_items else {}
+        t_lines += ["", f"科技新聞（Raspberry Pi）：{rpi_new} 則更新", f"- {top.get('title','(no title)')}\n  {top.get('link','')}" ]
 
     telegram_text = "\n".join([l for l in t_lines if l is not None])
 
@@ -192,13 +194,13 @@ def main() -> int:
         "[3] 地震（USGS Significant past day）",
         fmt_eq(eq, limit=10),
         "",
-        "[4] RWeekly（R 語言）",
+        "[4] 科技新聞（Raspberry Pi）",
     ]
-    if rw_new == 0:
+    if rpi_new == 0:
         e_lines.append("今日無更新")
     else:
-        e_lines.append(f"今日新增 {rw_new} 則（列出前 10 則）")
-        for it in summarize_rweekly(rw_items, limit=10):
+        e_lines.append(f"今日新增 {rpi_new} 則（列出前 10 則）")
+        for it in summarize_rweekly(rpi_items, limit=10):
             e_lines.append(f"- {it['title']}\n  {it['link']}")
             if it.get("summary"):
                 e_lines.append(f"  摘要：{it['summary']}")
@@ -262,11 +264,11 @@ def main() -> int:
             )
         eq_html = "<ul style='padding-left:18px; margin:10px 0 0 0;'>" + "".join(lis) + "</ul>"
 
-    if rw_new == 0:
-        rw_html = "<div style='color:#6b7280;'>今日無更新</div>"
+    if rpi_new == 0:
+        tech_html = "<div style='color:#6b7280;'>今日無更新</div>"
     else:
         lis = []
-        for it in summarize_rweekly(rw_items, limit=10):
+        for it in summarize_rweekly(rpi_items, limit=10):
             title = html_escape(it.get("title") or "")
             link = str(it.get("link") or "")
             summ = html_escape(it.get("summary") or "")
@@ -277,8 +279,8 @@ def main() -> int:
                 + (f"<div style='margin-top:4px; color:#374151;'>{summ}</div>" if summ else "")
                 + "</li>"
             )
-        rw_html = (
-            f"<div style='color:#111827; margin-top:6px;'>今日新增 <b>{rw_new}</b> 則（列出前 10 則）</div>"
+        tech_html = (
+            f"<div style='color:#111827; margin-top:6px;'>今日新增 <b>{rpi_new}</b> 則（列出前 10 則）</div>"
             + "<ul style='padding-left:18px; margin:10px 0 0 0;'>"
             + "".join(lis)
             + "</ul>"
@@ -330,8 +332,8 @@ def main() -> int:
     </div>
 
     <div style="background:#fff; padding:16px 18px; border-radius:12px; margin-top:12px; border:1px solid #e5e7eb;">
-      <div style="font-size:16px; font-weight:800; color:#111827;">[4] RWeekly（R 語言）</div>
-      {rw_html}
+      <div style="font-size:16px; font-weight:800; color:#111827;">[4] 科技新聞（Raspberry Pi）</div>
+      {tech_html}
     </div>
 
     <div style="color:#6b7280; font-size:12px; margin-top:12px; padding:0 6px;">
