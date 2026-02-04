@@ -159,7 +159,7 @@ def yahoo_quote_batch(symbols: list[str]) -> dict[str, dict]:
         return {}
 
 
-def run_market(market_key: str, indices: list[str], tickers: list[str], ma_cfg: dict, highlights_top_n: int, state: dict, name_map: dict | None = None) -> dict:
+def run_market(market_key: str, indices: list[str], tickers: list[str], ma_cfg: dict, highlights_top_n: int, state: dict, name_map: dict | None = None, commit_state: bool = True) -> dict:
     items = []
     errors = []
     market_date = None
@@ -285,7 +285,7 @@ def run_market(market_key: str, indices: list[str], tickers: list[str], ma_cfg: 
         "errors": errors,
     }
 
-    if should_send:
+    if should_send and commit_state:
         state.setdefault("lastSent", {})[market_key] = market_date
 
     return report
@@ -304,6 +304,13 @@ def main() -> int:
         i = sys.argv.index("--market")
         if i + 1 < len(sys.argv):
             markets = [sys.argv[i + 1]]
+
+    # Default behavior (legacy): commit lastSent state when a new market day is detected.
+    # For scheduling systems that may terminate mid-run, you can disable state writes and
+    # commit only after successful delivery (see mark_sent.py).
+    commit_state = True
+    if "--no-save-state" in sys.argv:
+        commit_state = False
 
     out = {
         "runAt": utc_now_iso(),
@@ -325,11 +332,12 @@ def main() -> int:
                 except Exception:
                     name_map = None
 
-        rep = run_market(market_key, indices, tickers, ma_cfg, top_n, state, name_map=name_map)
+        rep = run_market(market_key, indices, tickers, ma_cfg, top_n, state, name_map=name_map, commit_state=commit_state)
         rep["runLabel"] = cfg[market_key].get("runLabel")
         out["reports"].append(rep)
 
-    save_json(STATE_PATH, state)
+    if commit_state:
+        save_json(STATE_PATH, state)
     print(json.dumps(out, ensure_ascii=False))
     return 0
 
