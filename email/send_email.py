@@ -105,10 +105,9 @@ def main() -> int:
     started_at = time.time()
     log_path = args.log
 
-    # Step 2B-3b: Wrap in an outer attempt loop, but keep behavior the same as before
-    # (no actual retry yet). We'll record attempt metadata in logs.
+    # Step 2B-3c: Enable retries with backoff on failure.
     max_attempts = int(args.retries) if int(args.retries) > 0 else 1
-    attempts_effective = 1
+    attempts_effective = max_attempts
 
     last_err: Exception | None = None
 
@@ -141,6 +140,14 @@ def main() -> int:
 
         except Exception as e:
             last_err = e
+
+            wait_s = 0
+            if attempt < attempts_effective:
+                if _backoff:
+                    wait_s = _backoff[min(attempt - 1, len(_backoff) - 1)]
+                else:
+                    wait_s = 5
+
             if log_path:
                 append_jsonl(log_path, {
                     "ts": int(time.time()),
@@ -155,9 +162,13 @@ def main() -> int:
                     "timeout": int(args.timeout),
                     "durationMs": int((time.time() - started_at) * 1000),
                     "error": f"{type(e).__name__}: {e}",
+                    "nextWaitSec": wait_s,
                 })
 
-    # Preserve old behavior: raise the last error.
+            if wait_s and attempt < attempts_effective:
+                time.sleep(wait_s)
+
+    # If all attempts failed, raise the last error.
     if last_err is not None:
         raise last_err
 
