@@ -105,45 +105,63 @@ def main() -> int:
     started_at = time.time()
     log_path = args.log
 
-    try:
-        ctx = ssl.create_default_context()
-        with smtplib.SMTP(args.smtp_host, args.smtp_port, timeout=int(args.timeout)) as s:
-            s.ehlo()
-            s.starttls(context=ctx)
-            s.ehlo()
-            s.login(args.from_addr, app_pw)
-            s.send_message(msg)
+    # Step 2B-3b: Wrap in an outer attempt loop, but keep behavior the same as before
+    # (no actual retry yet). We'll record attempt metadata in logs.
+    max_attempts = int(args.retries) if int(args.retries) > 0 else 1
+    attempts_effective = 1
 
-        if log_path:
-            append_jsonl(log_path, {
-                "ts": int(time.time()),
-                "ok": True,
-                "from": args.from_addr,
-                "to": args.to_addr,
-                "subject": args.subject,
-                "smtpHost": args.smtp_host,
-                "smtpPort": args.smtp_port,
-                "timeout": int(args.timeout),
-                "durationMs": int((time.time() - started_at) * 1000),
-            })
+    last_err: Exception | None = None
 
-        return 0
+    for attempt in range(1, attempts_effective + 1):
+        try:
+            ctx = ssl.create_default_context()
+            with smtplib.SMTP(args.smtp_host, args.smtp_port, timeout=int(args.timeout)) as s:
+                s.ehlo()
+                s.starttls(context=ctx)
+                s.ehlo()
+                s.login(args.from_addr, app_pw)
+                s.send_message(msg)
 
-    except Exception as e:
-        if log_path:
-            append_jsonl(log_path, {
-                "ts": int(time.time()),
-                "ok": False,
-                "from": args.from_addr,
-                "to": args.to_addr,
-                "subject": args.subject,
-                "smtpHost": args.smtp_host,
-                "smtpPort": args.smtp_port,
-                "timeout": int(args.timeout),
-                "durationMs": int((time.time() - started_at) * 1000),
-                "error": f"{type(e).__name__}: {e}",
-            })
-        raise
+            if log_path:
+                append_jsonl(log_path, {
+                    "ts": int(time.time()),
+                    "ok": True,
+                    "attempt": attempt,
+                    "maxAttempts": max_attempts,
+                    "from": args.from_addr,
+                    "to": args.to_addr,
+                    "subject": args.subject,
+                    "smtpHost": args.smtp_host,
+                    "smtpPort": args.smtp_port,
+                    "timeout": int(args.timeout),
+                    "durationMs": int((time.time() - started_at) * 1000),
+                })
+
+            return 0
+
+        except Exception as e:
+            last_err = e
+            if log_path:
+                append_jsonl(log_path, {
+                    "ts": int(time.time()),
+                    "ok": False,
+                    "attempt": attempt,
+                    "maxAttempts": max_attempts,
+                    "from": args.from_addr,
+                    "to": args.to_addr,
+                    "subject": args.subject,
+                    "smtpHost": args.smtp_host,
+                    "smtpPort": args.smtp_port,
+                    "timeout": int(args.timeout),
+                    "durationMs": int((time.time() - started_at) * 1000),
+                    "error": f"{type(e).__name__}: {e}",
+                })
+
+    # Preserve old behavior: raise the last error.
+    if last_err is not None:
+        raise last_err
+
+    return 1
 
 
 if __name__ == "__main__":
