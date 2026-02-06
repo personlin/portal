@@ -64,6 +64,7 @@ def main() -> int:
 
     # Telegram workflow is tool-driven (functions.message). This script helps by
     # emitting the message text + writing back send status.
+    ap.add_argument("--status", action="store_true", help="Print current sendStatus for today/date")
     ap.add_argument("--get-telegram", action="store_true", help="Print telegram text to stdout")
     ap.add_argument("--mark-telegram-sent", action="store_true", help="Mark telegram as sent in outbox JSON")
     ap.add_argument("--telegram-ok", action="store_true", help="When marking sent, set ok=true")
@@ -127,6 +128,15 @@ def main() -> int:
     # Optional: telegram helper operations
     out["getTelegram"] = False
     out["markTelegramSent"] = False
+
+    if args.status:
+        print(json.dumps({
+            "ok": True,
+            "dateTaipei": date_tpe,
+            "email": meta.get("email", {}),
+            "telegram": meta.get("telegram", {}),
+        }, ensure_ascii=False))
+        return 0
 
     if args.get_telegram:
         out["getTelegram"] = True
