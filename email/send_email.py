@@ -27,6 +27,19 @@ def read_file(path: str) -> str:
         return f.read()
 
 
+def append_jsonl(path: str, obj: dict) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    line = (json_dumps(obj) + "\n")
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(line)
+
+
+def json_dumps(obj: dict) -> str:
+    import json
+
+    return json.dumps(obj, ensure_ascii=False)
+
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--from", dest="from_addr", required=True)
@@ -74,15 +87,48 @@ def main() -> int:
     if body_html is not None:
         msg.add_alternative(body_html, subtype="html")
 
-    ctx = ssl.create_default_context()
-    with smtplib.SMTP(args.smtp_host, args.smtp_port, timeout=int(args.timeout)) as s:
-        s.ehlo()
-        s.starttls(context=ctx)
-        s.ehlo()
-        s.login(args.from_addr, app_pw)
-        s.send_message(msg)
+    started_at = time.time()
+    log_path = args.log
 
-    return 0
+    try:
+        ctx = ssl.create_default_context()
+        with smtplib.SMTP(args.smtp_host, args.smtp_port, timeout=int(args.timeout)) as s:
+            s.ehlo()
+            s.starttls(context=ctx)
+            s.ehlo()
+            s.login(args.from_addr, app_pw)
+            s.send_message(msg)
+
+        if log_path:
+            append_jsonl(log_path, {
+                "ts": int(time.time()),
+                "ok": True,
+                "from": args.from_addr,
+                "to": args.to_addr,
+                "subject": args.subject,
+                "smtpHost": args.smtp_host,
+                "smtpPort": args.smtp_port,
+                "timeout": int(args.timeout),
+                "durationMs": int((time.time() - started_at) * 1000),
+            })
+
+        return 0
+
+    except Exception as e:
+        if log_path:
+            append_jsonl(log_path, {
+                "ts": int(time.time()),
+                "ok": False,
+                "from": args.from_addr,
+                "to": args.to_addr,
+                "subject": args.subject,
+                "smtpHost": args.smtp_host,
+                "smtpPort": args.smtp_port,
+                "timeout": int(args.timeout),
+                "durationMs": int((time.time() - started_at) * 1000),
+                "error": f"{type(e).__name__}: {e}",
+            })
+        raise
 
 
 if __name__ == "__main__":
