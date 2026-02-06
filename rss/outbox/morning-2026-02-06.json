@@ -18,6 +18,11 @@
       "subject": "[2C測試] 早安彙整 2026-02-06",
       "durationMs": 2522,
       "lastError": null
+    },
+    "telegram": {
+      "ok": true,
+      "sentAtUtc": "2026-02-06T13:42:59Z",
+      "lastError": null
     }
   }
 }

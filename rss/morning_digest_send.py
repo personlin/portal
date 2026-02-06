@@ -61,6 +61,14 @@ def main() -> int:
     ap.add_argument("--timeout", type=int, default=30)
     ap.add_argument("--retries", type=int, default=3)
     ap.add_argument("--retry-backoff", default="5,15,45")
+
+    # Telegram workflow is tool-driven (functions.message). This script helps by
+    # emitting the message text + writing back send status.
+    ap.add_argument("--get-telegram", action="store_true", help="Print telegram text to stdout")
+    ap.add_argument("--mark-telegram-sent", action="store_true", help="Mark telegram as sent in outbox JSON")
+    ap.add_argument("--telegram-ok", action="store_true", help="When marking sent, set ok=true")
+    ap.add_argument("--telegram-error", default=None, help="When marking sent, record last error")
+
     args = ap.parse_args()
 
     date_tpe = args.date or taipei_date()
@@ -89,6 +97,7 @@ def main() -> int:
     # Ensure metadata section for send status
     meta = payload.setdefault("sendStatus", {})
     email_meta = meta.setdefault("email", {})
+    tg_meta = meta.setdefault("telegram", {})
 
     # Prefer sidecar files if present
     email_text = read_text(txt_path) if os.path.exists(txt_path) else (payload.get("email") or {}).get("text") or ""
@@ -105,11 +114,36 @@ def main() -> int:
     }
 
     tg_text = (payload.get("telegram") or {}).get("text") or ""
-    out["telegram"] = {"textLen": len(tg_text)}
+    out["telegram"] = {
+        "textLen": len(tg_text),
+        "alreadySentAtUtc": tg_meta.get("sentAtUtc"),
+        "alreadyOk": tg_meta.get("ok"),
+    }
 
     # Optional: send email
     out["sendEmailAttempted"] = False
     out["sendEmailDidSend"] = False
+
+    # Optional: telegram helper operations
+    out["getTelegram"] = False
+    out["markTelegramSent"] = False
+
+    if args.get_telegram:
+        out["getTelegram"] = True
+        print(tg_text)
+        return 0
+
+    if args.mark_telegram_sent:
+        out["markTelegramSent"] = True
+        tg_meta.update({
+            "ok": bool(args.telegram_ok),
+            "sentAtUtc": utc_now_iso() if args.telegram_ok else None,
+            "lastError": args.telegram_error,
+        })
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+        print(json.dumps({"ok": True, "marked": True, "telegram": tg_meta}, ensure_ascii=False))
+        return 0
 
     if args.send_email:
         out["sendEmailAttempted"] = True
