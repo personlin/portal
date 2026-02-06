@@ -23,6 +23,7 @@ from zoneinfo import ZoneInfo
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WORKSPACE = os.path.dirname(BASE_DIR)
+OUTBOX_DIR = os.path.join(BASE_DIR, "outbox")
 
 RSS_WATCHER = os.path.join(BASE_DIR, "rss_watcher.py")
 RSS_ENRICH = os.path.join(BASE_DIR, "rss_enrich.py")
@@ -41,6 +42,15 @@ def utc_now_iso() -> str:
 
 def taipei_date() -> str:
     return datetime.now(ZoneInfo("Asia/Taipei")).date().isoformat()
+
+
+def ensure_outbox() -> None:
+    os.makedirs(OUTBOX_DIR, exist_ok=True)
+
+
+def outbox_paths(date_tpe: str) -> tuple[str, str, str]:
+    base = os.path.join(OUTBOX_DIR, f"morning-{date_tpe}")
+    return base + ".json", base + ".email.txt", base + ".email.html"
 
 
 def run_json(cmd: list[str]) -> dict:
@@ -356,6 +366,16 @@ def main() -> int:
             "html": email_html,
         },
     }
+
+    # Persist to outbox for reliability / resends.
+    ensure_outbox()
+    json_path, txt_path, html_path = outbox_paths(date_tpe)
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, indent=2)
+    with open(txt_path, "w", encoding="utf-8") as f:
+        f.write(email_text)
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(email_html)
 
     print(json.dumps(out, ensure_ascii=False))
     return 0
