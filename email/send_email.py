@@ -18,6 +18,7 @@ import argparse
 import os
 import smtplib
 import ssl
+import time
 from email.message import EmailMessage
 
 
@@ -43,6 +44,13 @@ def main() -> int:
     p.add_argument("--app-password-file", required=True)
     p.add_argument("--smtp-host", default="smtp.gmail.com")
     p.add_argument("--smtp-port", type=int, default=587)
+
+    # Reliability
+    p.add_argument("--timeout", type=int, default=30, help="SMTP timeout seconds")
+    p.add_argument("--retries", type=int, default=3, help="Max attempts")
+    p.add_argument("--retry-backoff", default="5,15,45", help="Comma-separated seconds")
+    p.add_argument("--log", default=None, help="Append JSONL log to this path")
+
     args = p.parse_args()
 
     if not (args.text or args.text_file or args.html or args.html_file):
@@ -67,7 +75,7 @@ def main() -> int:
         msg.add_alternative(body_html, subtype="html")
 
     ctx = ssl.create_default_context()
-    with smtplib.SMTP(args.smtp_host, args.smtp_port, timeout=30) as s:
+    with smtplib.SMTP(args.smtp_host, args.smtp_port, timeout=int(args.timeout)) as s:
         s.ehlo()
         s.starttls(context=ctx)
         s.ehlo()
