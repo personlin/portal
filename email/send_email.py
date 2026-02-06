@@ -40,6 +40,19 @@ def json_dumps(obj: dict) -> str:
     return json.dumps(obj, ensure_ascii=False)
 
 
+def parse_backoff(s: str) -> list[int]:
+    out: list[int] = []
+    for part in (s or "").split(","):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            out.append(max(0, int(float(part))))
+        except Exception:
+            continue
+    return out
+
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--from", dest="from_addr", required=True)
@@ -65,6 +78,8 @@ def main() -> int:
     p.add_argument("--log", default=None, help="Append JSONL log to this path")
 
     args = p.parse_args()
+    # Parse backoff now; retry behavior added in later steps.
+    _backoff = parse_backoff(args.retry_backoff)
 
     if not (args.text or args.text_file or args.html or args.html_file):
         raise SystemExit("Provide --text/--text-file and/or --html/--html-file")
