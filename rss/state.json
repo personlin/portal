@@ -305,6 +305,9 @@
       },
       "1ab5ccefa75a8d7e8f239f776cdafb6a979eb597": {
         "seenAt": "2026-02-06T00:13:57Z"
+      },
+      "84f16249ba0115555ca6fbf56952c5372cc4a518": {
+        "seenAt": "2026-02-07T00:00:09Z"
       }
     },
     "https://rss.sciencedirect.com/publication/science/00137952": {
@@ -532,6 +535,9 @@
       },
       "4e8b147fe5af7df3f9db0404bc3359cf9bfde7f9": {
         "seenAt": "2026-02-06T00:13:58Z"
+      },
+      "9b77b031bf3e334ca9df282d1b87a53079ffb993": {
+        "seenAt": "2026-02-07T00:00:09Z"
       }
     },
     "https://academic.oup.com/rss/site_5282/3148.xml": {
@@ -857,6 +863,33 @@
       },
       "8c20db81d08cbc5e31754f5de3efb6df125106b0": {
         "seenAt": "2026-02-06T00:13:59Z"
+      },
+      "011574f81dea68dcaa8a86ba07f3ea777432eddc": {
+        "seenAt": "2026-02-07T00:00:10Z"
+      },
+      "b821545ad757c315167e44f68aceece7d038bddb": {
+        "seenAt": "2026-02-07T00:00:10Z"
+      },
+      "150bbcc2c287b3376199dba8620fa0f68faf1c48": {
+        "seenAt": "2026-02-07T00:00:10Z"
+      },
+      "e6aa6c292360ada62556c6ff184679ad304d81ad": {
+        "seenAt": "2026-02-07T00:00:10Z"
+      },
+      "441175969f40b7230f14bca2da4634b7f793a669": {
+        "seenAt": "2026-02-07T00:00:10Z"
+      },
+      "28a7c39629ef206e4aeb9481b86a1ceb3e813270": {
+        "seenAt": "2026-02-07T00:00:10Z"
+      },
+      "c2cd7a234b607abccbc23f2808b2c0535256d5e8": {
+        "seenAt": "2026-02-07T00:00:10Z"
+      },
+      "6ba6106f69d2e7c5f357fcd84f4c4dca6f9ee4e7": {
+        "seenAt": "2026-02-07T00:00:10Z"
+      },
+      "90287bed4744866550965b32cd4cfc3d407ef94c": {
+        "seenAt": "2026-02-07T00:00:10Z"
       }
     },
     "https://pubs.geoscienceworld.org/rss/site_143/advanceAccess_72.xml": {
@@ -921,6 +954,21 @@
       },
       "ea3bc4de8fdee59b31d4548ad4f53656112249da": {
         "seenAt": "2026-02-06T00:14:00Z"
+      },
+      "138eaf7bc35d1203aeea29b89d98a5c7002ffa9f": {
+        "seenAt": "2026-02-07T00:00:11Z"
+      },
+      "a34d729424b58137d531587192ccc8a8d4c042c1": {
+        "seenAt": "2026-02-07T00:00:11Z"
+      },
+      "764876388c2c77258b8b713511c93eb3966492ff": {
+        "seenAt": "2026-02-07T00:00:11Z"
+      },
+      "51f06342cc86ceaebf629a36e55c116d59bf45ac": {
+        "seenAt": "2026-02-07T00:00:11Z"
+      },
+      "8358320a76f538c810952d3066da0cc1f59afef9": {
+        "seenAt": "2026-02-07T00:00:11Z"
       }
     },
     "https://www.nature.com/ngeo.rss": {},
@@ -986,6 +1034,12 @@
       },
       "744cd3b4053d660065e8a66f352cbb11e9f75d5d": {
         "seenAt": "2026-02-03T13:21:17Z"
+      },
+      "ef14ea8a8d289349eaf125449e48e831a4890e46": {
+        "seenAt": "2026-02-07T00:00:15Z"
+      },
+      "68311316011a0d028ad0e2f26c4a9e7c48405657": {
+        "seenAt": "2026-02-07T00:00:15Z"
       }
     },
     "https://rss.sciencedirect.com/publication/science/00401951": {
@@ -1057,5 +1111,5 @@
       }
     }
   },
-  "lastRunAt": "2026-02-06T06:44:50Z"
+  "lastRunAt": "2026-02-07T00:00:15Z"
 }
