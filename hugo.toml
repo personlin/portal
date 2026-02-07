@@ -25,15 +25,15 @@ theme = 'PaperMod'
   [[menu.main]]
     identifier = 'home'
     name = 'Home'
-    url = '/'
+    url = ''
     weight = 1
   [[menu.main]]
     identifier = 'links'
     name = 'Links'
-    url = '/links/'
+    url = 'links/'
     weight = 2
   [[menu.main]]
     identifier = 'notes'
     name = 'Notes'
-    url = '/notes/'
+    url = 'notes/'
     weight = 3
