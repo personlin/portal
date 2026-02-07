@@ -18,8 +18,16 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 from datetime import datetime
 from zoneinfo import ZoneInfo
+
+# allow importing rss.db when run as a script
+WORKSPACE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if WORKSPACE not in sys.path:
+    sys.path.insert(0, WORKSPACE)
+
+from rss.db import rss_store  # type: ignore
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WORKSPACE = os.path.dirname(BASE_DIR)
@@ -36,6 +44,40 @@ def taipei_date() -> str:
 def run_json(cmd: list[str]) -> dict:
     out = subprocess.check_output(cmd, text=True)
     return json.loads(out)
+
+
+def record_batch(*, kind: str, date_tpe: str, batch_id: str, status: str, gist_url: str | None, gist_id: str | None,
+                 included_count: int, remaining_pending_after: int | None, error: str | None) -> None:
+    conn = rss_store.connect()
+    rss_store.init_db(conn)
+    conn.execute(
+        """
+        INSERT INTO digest_batches(
+          kind, date_taipei, batch_id, gist_url, gist_id, included_count,
+          remaining_pending_after, status, error, created_at_utc
+        ) VALUES (?,?,?,?,?,?,?,?,?,?)
+        ON CONFLICT(batch_id) DO UPDATE SET
+          gist_url=excluded.gist_url,
+          gist_id=excluded.gist_id,
+          included_count=excluded.included_count,
+          remaining_pending_after=excluded.remaining_pending_after,
+          status=excluded.status,
+          error=excluded.error
+        """,
+        (
+            kind,
+            date_tpe,
+            batch_id,
+            gist_url,
+            gist_id,
+            int(included_count),
+            remaining_pending_after,
+            status,
+            error,
+            rss_store.utc_now_iso(),
+        ),
+    )
+    conn.commit()
 
 
 def main() -> int:
@@ -78,10 +120,24 @@ def main() -> int:
     ])
 
     if not gist.get("ok"):
-        print(json.dumps({"ok": False, "stage": "gist_upload", "md": md, "gist": gist}, ensure_ascii=False, indent=2))
+        # Record failed batch (no batch_id yet; create a stable one)
+        batch_id = f"geosci-{rss_store.utc_now_iso()}"
+        record_batch(
+            kind="geosci",
+            date_tpe=date_tpe,
+            batch_id=batch_id,
+            status="failed",
+            gist_url=None,
+            gist_id=None,
+            included_count=int(md.get("count") or 0),
+            remaining_pending_after=None,
+            error="gist_upload_failed",
+        )
+        print(json.dumps({"ok": False, "stage": "gist_upload", "md": md, "gist": gist, "batchId": batch_id}, ensure_ascii=False, indent=2))
         return 2
 
     gist_url = gist.get("url")
+    gist_id = gist.get("id")
 
     # 3) Mark delivered (sent)
     marked = run_json([
@@ -97,14 +153,29 @@ def main() -> int:
         str(gist_url),
     ])
 
+    batch_id = marked.get("batchId")
+
+    # 4) Record batch in DB
+    record_batch(
+        kind="geosci",
+        date_tpe=date_tpe,
+        batch_id=str(batch_id),
+        status="created",
+        gist_url=str(gist_url),
+        gist_id=str(gist_id) if gist_id else None,
+        included_count=int(md.get("count") or 0),
+        remaining_pending_after=int(marked.get("remainingPending")) if marked.get("remainingPending") is not None else None,
+        error=None,
+    )
+
     out = {
         "ok": True,
         "dateTaipei": date_tpe,
         "includedCount": int(md.get("count") or 0),
         "mdPath": md.get("outPath"),
         "gistUrl": gist_url,
-        "gistId": gist.get("id"),
-        "batchId": marked.get("batchId"),
+        "gistId": gist_id,
+        "batchId": batch_id,
         "markedSent": marked.get("markedSent"),
         "remainingPending": marked.get("remainingPending"),
     }
