@@ -91,13 +91,25 @@ def upsert_digest_delivery(*, date_tpe: str, channel: str, target: str, status: 
     conn.commit()
 
 
+def db_digest_status(*, date_tpe: str, channel: str, target: str) -> dict | None:
+    conn = rss_store.connect(DB_PATH)
+    rss_store.init_db(conn)
+    row = conn.execute(
+        "SELECT status, sent_at_utc, error, batch_id FROM digest_deliveries WHERE kind=? AND date_taipei=? AND channel=? AND target=?",
+        (DIGEST_KIND, date_tpe, channel, target),
+    ).fetchone()
+    if not row:
+        return None
+    return {"status": row[0], "sentAtUtc": row[1], "error": row[2], "batchId": row[3]}
+
+
 def main() -> int:
     import argparse
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--date", default=None, help="Asia/Taipei date YYYY-MM-DD (default today)")
     ap.add_argument("--send-email", action="store_true", help="Actually send the email")
-    ap.add_argument("--force-email", action="store_true", help="Send even if already marked sent")
+    ap.add_argument("--force-email", action="store_true", help="Send even if DB says sent")
     ap.add_argument("--subject-prefix", default="", help="Prefix for subject (testing)")
     ap.add_argument("--timeout", type=int, default=30)
     ap.add_argument("--retries", type=int, default=3)
@@ -171,11 +183,18 @@ def main() -> int:
     out["markTelegramSent"] = False
 
     if args.status:
+        email_to = str((payload.get("email") or {}).get("to") or "")
         print(json.dumps({
             "ok": True,
             "dateTaipei": date_tpe,
-            "email": meta.get("email", {}),
-            "telegram": meta.get("telegram", {}),
+            "outbox": {
+                "email": meta.get("email", {}),
+                "telegram": meta.get("telegram", {}),
+            },
+            "db": {
+                "email": db_digest_status(date_tpe=date_tpe, channel="email", target=email_to),
+                "telegram": db_digest_status(date_tpe=date_tpe, channel="telegram", target="401392371"),
+            }
         }, ensure_ascii=False))
         return 0
 
@@ -220,9 +239,16 @@ def main() -> int:
     if args.send_email:
         out["sendEmailAttempted"] = True
 
-        if email_meta.get("ok") is True and email_meta.get("sentAtUtc") and not args.force_email:
+        email_to = str((payload.get("email") or {}).get("to") or "")
+        db_stat = db_digest_status(date_tpe=date_tpe, channel="email", target=email_to)
+
+        if db_stat and db_stat.get("status") == "sent" and not args.force_email:
             out["sendEmailDidSend"] = False
-            out["sendEmailSkippedReason"] = "already_sent"
+            out["sendEmailSkippedReason"] = "db_already_sent"
+        elif email_meta.get("ok") is True and email_meta.get("sentAtUtc") and not args.force_email:
+            # legacy fallback
+            out["sendEmailDidSend"] = False
+            out["sendEmailSkippedReason"] = "outbox_already_sent"
         else:
             subj = (payload.get("email") or {}).get("subject") or "(no subject)"
             subj = args.subject_prefix + subj
