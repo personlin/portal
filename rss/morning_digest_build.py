@@ -138,10 +138,19 @@ def main() -> int:
     date_tpe = taipei_date()
 
     # 1) GeoSci RSS -> gist (DB-backed; includes pending from previous runs)
-    geosci = run_json(["python3", GEOSCI_DB_TO_GIST, "--limit", "120"])
-    gist_url = geosci.get("gistUrl")
-    rss_count = geosci.get("includedCount")
-    remaining_pending = geosci.get("remainingPending")
+    try:
+        geosci = run_json(["python3", GEOSCI_DB_TO_GIST, "--limit", "120"])
+        gist_url = geosci.get("gistUrl")
+        rss_count = geosci.get("includedCount")
+        remaining_pending = geosci.get("remainingPending")
+        geosci_error = None
+    except Exception as e:
+        # Fail open: keep the rest of the digest working; catch-up can retry later.
+        geosci = None
+        gist_url = None
+        rss_count = 0
+        remaining_pending = None
+        geosci_error = f"{type(e).__name__}: {e}"
 
     # 2) Crypto
     crypto = run_json(["python3", CRYPTO, "--mode", "summary"])
@@ -159,7 +168,7 @@ def main() -> int:
     t_lines = [
         f"早安彙整（{date_tpe}）",
         "",
-        f"期刊 RSS：{rss_count or 0} 則\n{gist_url}",
+        (f"期刊 RSS：{rss_count or 0} 則\n{gist_url}" if gist_url else f"期刊 RSS：資料庫/上傳暫時不可用（稍後補寄）"),
         "",
         "加密貨幣（簡）",
         crypto_short or "- （無資料）",
@@ -183,8 +192,9 @@ def main() -> int:
         "",
         "[1] 期刊 RSS（GeoSci）",
         f"- 今日新增：{rss_count or 0} 則",
-        f"- 完整內容（Secret Gist）：{gist_url}",
+        (f"- 完整內容（Secret Gist）：{gist_url}" if gist_url else "- 完整內容：暫時不可用（稍後補寄）"),
         f"- 尚未送出：{remaining_pending} 則" if remaining_pending is not None else None,
+        f"- GeoSci 錯誤：{geosci_error}" if geosci_error else None,
         "",
         "[2] 加密貨幣（較完整）",
         crypto_long or "（無資料）",
@@ -203,7 +213,7 @@ def main() -> int:
             if it.get("summary"):
                 e_lines.append(f"  摘要：{it['summary']}")
 
-    email_text = "\n".join(e_lines)
+    email_text = "\n".join([l for l in e_lines if l is not None])
 
     # Email HTML (styled)
     rss_count_s = str(rss_count or 0)
