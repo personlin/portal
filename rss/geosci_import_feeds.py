@@ -14,8 +14,14 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 
-from rss.db import rss_store
+# Allow running as a script from anywhere
+WORKSPACE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if WORKSPACE not in sys.path:
+    sys.path.insert(0, WORKSPACE)
+
+from rss.db import rss_store  # type: ignore
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FEEDS_PATH = os.path.join(BASE_DIR, "feeds.txt")
