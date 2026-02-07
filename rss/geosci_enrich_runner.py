@@ -253,12 +253,12 @@ def main() -> int:
     import argparse
 
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", choices=["stats", "abstract", "translate", "summarize"], default="stats")
+    ap.add_argument("--mode", choices=["stats", "abstract", "translate", "summarize", "run"], default="stats")
     ap.add_argument("--limit", type=int, default=50)
     ap.add_argument("--timeout", type=int, default=25)
     ap.add_argument("--sleep", type=float, default=0.0)
     ap.add_argument("--model-mini", default=os.environ.get("GEOSCI_TRANSLATE_MODEL_MINI", "gpt-5-mini"))
-    ap.add_argument("--model-full", default=os.environ.get("GEOSCI_TRANSLATE_MODEL_FULL", "gpt-4o"))
+    ap.add_argument("--model-full", default=os.environ.get("GEOSCI_TRANSLATE_MODEL_FULL", "gpt-4.1-mini"))
     args = ap.parse_args()
 
     conn = rss_store.connect()
@@ -353,7 +353,24 @@ def main() -> int:
         print(json.dumps(out, ensure_ascii=False, indent=2))
         return 0
 
-    if args.mode == "summarize":
+    def run_finalize_ok() -> int:
+        # inline Step C4 rule
+        cur = conn.execute(
+            """
+            UPDATE items
+            SET enrich_status='ok', enrich_error=NULL
+            WHERE (enrich_status IS NULL OR enrich_status IN ('pending','abstract_ok','translated_ok','summarized_ok'))
+              AND abstract IS NOT NULL AND abstract != ''
+              AND title_zh_tw IS NOT NULL AND title_zh_tw != ''
+              AND abstract_zh_tw IS NOT NULL AND abstract_zh_tw != ''
+              AND summary_en IS NOT NULL AND summary_en != ''
+              AND summary_zh_tw IS NOT NULL AND summary_zh_tw != ''
+            """
+        )
+        conn.commit()
+        return int(cur.rowcount or 0)
+
+    def do_summarize(batch_limit: int) -> list[dict]:
         rows = conn.execute(
             """
             SELECT id, title, abstract
@@ -364,7 +381,7 @@ def main() -> int:
             ORDER BY first_seen_at_utc ASC
             LIMIT ?
             """,
-            (int(args.limit),),
+            (int(batch_limit),),
         ).fetchall()
 
         results = []
@@ -412,8 +429,120 @@ def main() -> int:
 
             if args.sleep:
                 time.sleep(float(args.sleep))
+        return results
 
-        out = {"ok": True, "mode": "summarize", "processed": len(rows), "results": results}
+    def do_translate(batch_limit: int) -> list[dict]:
+        rows = conn.execute(
+            """
+            SELECT id, title, abstract
+            FROM items
+            WHERE enrich_status IN ('abstract_ok','translated_ok','summarized_ok')
+              AND abstract IS NOT NULL AND abstract != ''
+              AND (title_zh_tw IS NULL OR title_zh_tw='' OR abstract_zh_tw IS NULL OR abstract_zh_tw='')
+            ORDER BY first_seen_at_utc ASC
+            LIMIT ?
+            """,
+            (int(batch_limit),),
+        ).fetchall()
+
+        results = []
+        for (item_id, title, abstract) in rows:
+            started = time.time()
+            try:
+                try:
+                    t_zh, a_zh = translate_title_abstract(title or "", abstract or "", model=str(args.model_mini))
+                    used_model = str(args.model_mini)
+                except Exception:
+                    t_zh, a_zh = translate_title_abstract(title or "", abstract or "", model=str(args.model_full))
+                    used_model = str(args.model_full)
+
+                conn.execute(
+                    """
+                    UPDATE items
+                    SET title_zh_tw=?, abstract_zh_tw=?,
+                        enrich_status='translated_ok', enrich_error=NULL, enriched_at_utc=?
+                    WHERE id=?
+                    """,
+                    (t_zh, a_zh, utc_now_iso(), int(item_id)),
+                )
+                conn.commit()
+                results.append({
+                    "itemId": int(item_id),
+                    "ok": True,
+                    "model": used_model,
+                    "titleZhLen": len(t_zh),
+                    "absZhLen": len(a_zh),
+                    "durationMs": int((time.time()-started)*1000),
+                })
+            except Exception as e:
+                err = f"{type(e).__name__}: {e}"
+                conn.execute(
+                    "UPDATE items SET enrich_status='failed', enrich_error=?, enriched_at_utc=? WHERE id=?",
+                    (err, utc_now_iso(), int(item_id)),
+                )
+                conn.commit()
+                results.append({
+                    "itemId": int(item_id),
+                    "ok": False,
+                    "error": err,
+                    "durationMs": int((time.time()-started)*1000),
+                })
+
+            if args.sleep:
+                time.sleep(float(args.sleep))
+        return results
+
+    def do_abstract(batch_limit: int) -> list[dict]:
+        rows = conn.execute(
+            """
+            SELECT id, title, link, doi
+            FROM items
+            WHERE (abstract IS NULL OR abstract='')
+              AND (enrich_status IS NULL OR enrich_status IN ('pending','failed'))
+            ORDER BY first_seen_at_utc ASC
+            LIMIT ?
+            """,
+            (int(batch_limit),),
+        ).fetchall()
+
+        results = []
+        for (item_id, title, link, doi) in rows:
+            res = enrich_one_abstract(conn, int(item_id), title or "", link or "", doi, int(args.timeout))
+            results.append(res)
+            if args.sleep:
+                time.sleep(float(args.sleep))
+        return results
+
+    if args.mode == "summarize":
+        results = do_summarize(int(args.limit))
+        out = {"ok": True, "mode": "summarize", "processed": len(results), "results": results}
+        print(json.dumps(out, ensure_ascii=False, indent=2))
+        return 0
+
+    if args.mode == "run":
+        # One-shot pipeline: abstract -> translate -> summarize -> finalize ok
+        r_abs = do_abstract(int(args.limit))
+        r_tr = do_translate(int(args.limit))
+        r_sum = do_summarize(int(args.limit))
+        marked_ok = run_finalize_ok()
+
+        out = {
+            "ok": True,
+            "mode": "run",
+            "limit": int(args.limit),
+            "processed": {
+                "abstract": len(r_abs),
+                "translate": len(r_tr),
+                "summarize": len(r_sum),
+                "marked_ok": marked_ok,
+            },
+            "results": {
+                "abstract": r_abs,
+                "translate": r_tr,
+                "summarize": r_sum,
+            },
+            "models": {"mini": str(args.model_mini), "full": str(args.model_full)},
+        }
         print(json.dumps(out, ensure_ascii=False, indent=2))
         return 0
 
