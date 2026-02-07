@@ -143,6 +143,7 @@ def main() -> int:
         gist_url = geosci.get("gistUrl")
         rss_count = geosci.get("includedCount")
         remaining_pending = geosci.get("remainingPending")
+        geosci_batch_id = geosci.get("batchId")
         geosci_error = None
     except Exception as e:
         # Fail open: keep the rest of the digest working; catch-up can retry later.
@@ -150,6 +151,7 @@ def main() -> int:
         gist_url = None
         rss_count = 0
         remaining_pending = None
+        geosci_batch_id = None
         geosci_error = f"{type(e).__name__}: {e}"
 
     # 2) Crypto
@@ -355,6 +357,14 @@ def main() -> int:
     out = {
         "runAt": utc_now_iso(),
         "dateTaipei": date_tpe,
+        "geosci": {
+            "ok": bool(gist_url),
+            "includedCount": int(rss_count or 0),
+            "gistUrl": gist_url,
+            "remainingPending": remaining_pending,
+            "batchId": geosci_batch_id,
+            "error": geosci_error,
+        },
         "telegram": {"text": telegram_text},
         "email": {
             "from": EMAIL_FROM,
