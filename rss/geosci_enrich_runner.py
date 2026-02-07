@@ -145,6 +145,24 @@ def openai_response_json(prompt: str, model: str) -> dict:
     return json.loads(txt)
 
 
+def summarize_en_zh(title_en: str, abstract_en: str, model: str) -> tuple[str, str]:
+    prompt = (
+        "You are a scientific editor. Summarize the following paper abstract.\n"
+        "Requirements:\n"
+        "- Output ONLY JSON: {\"summary_en\":..., \"summary_zh_tw\":...}\n"
+        "- summary_en: 2-4 sentences, plain English.\n"
+        "- summary_zh_tw: 2-4 sentences, Traditional Chinese (Taiwan).\n"
+        "- Do not add citations or fabricate results not in abstract.\n\n"
+        f"TITLE: {title_en}\n\nABSTRACT: {abstract_en}"
+    )
+    obj = openai_response_json(prompt, model=model)
+    s_en = (obj.get("summary_en") or "").strip()
+    s_zh = (obj.get("summary_zh_tw") or "").strip()
+    if len(s_en) < 40 or len(s_zh) < 20:
+        raise RuntimeError("summary_too_short")
+    return s_en, s_zh
+
+
 def translate_title_abstract(title_en: str, abstract_en: str, model: str) -> tuple[str, str]:
     prompt = (
         "你是專業科學編輯。請將以下英語內容翻譯成繁體中文（台灣用語），保持術語一致、語氣精準。\n"
@@ -235,11 +253,11 @@ def main() -> int:
     import argparse
 
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", choices=["stats", "abstract", "translate"], default="stats")
+    ap.add_argument("--mode", choices=["stats", "abstract", "translate", "summarize"], default="stats")
     ap.add_argument("--limit", type=int, default=50)
     ap.add_argument("--timeout", type=int, default=25)
     ap.add_argument("--sleep", type=float, default=0.0)
-    ap.add_argument("--model-mini", default=os.environ.get("GEOSCI_TRANSLATE_MODEL_MINI", "gpt-4o-mini"))
+    ap.add_argument("--model-mini", default=os.environ.get("GEOSCI_TRANSLATE_MODEL_MINI", "gpt-5-mini"))
     ap.add_argument("--model-full", default=os.environ.get("GEOSCI_TRANSLATE_MODEL_FULL", "gpt-4o"))
     args = ap.parse_args()
 
@@ -273,7 +291,7 @@ def main() -> int:
     if args.mode == "translate":
         rows = conn.execute(
             """
-            SELECT id, title, abstract, title_zh_tw, abstract_zh_tw
+            SELECT id, title, abstract
             FROM items
             WHERE enrich_status IN ('abstract_ok','translated_ok','summarized_ok')
               AND abstract IS NOT NULL AND abstract != ''
@@ -285,7 +303,7 @@ def main() -> int:
         ).fetchall()
 
         results = []
-        for (item_id, title, abstract, title_zh, abs_zh) in rows:
+        for (item_id, title, abstract) in rows:
             started = time.time()
             try:
                 # If either missing, translate both from EN to keep consistent.
@@ -332,6 +350,70 @@ def main() -> int:
                 time.sleep(float(args.sleep))
 
         out = {"ok": True, "mode": "translate", "processed": len(rows), "results": results}
+        print(json.dumps(out, ensure_ascii=False, indent=2))
+        return 0
+
+    if args.mode == "summarize":
+        rows = conn.execute(
+            """
+            SELECT id, title, abstract
+            FROM items
+            WHERE enrich_status IN ('translated_ok','summarized_ok')
+              AND abstract IS NOT NULL AND abstract != ''
+              AND (summary_en IS NULL OR summary_en='' OR summary_zh_tw IS NULL OR summary_zh_tw='')
+            ORDER BY first_seen_at_utc ASC
+            LIMIT ?
+            """,
+            (int(args.limit),),
+        ).fetchall()
+
+        results = []
+        for (item_id, title, abstract) in rows:
+            started = time.time()
+            try:
+                try:
+                    s_en, s_zh = summarize_en_zh(title or "", abstract or "", model=str(args.model_mini))
+                    used_model = str(args.model_mini)
+                except Exception:
+                    s_en, s_zh = summarize_en_zh(title or "", abstract or "", model=str(args.model_full))
+                    used_model = str(args.model_full)
+
+                conn.execute(
+                    """
+                    UPDATE items
+                    SET summary_en=?, summary_zh_tw=?,
+                        enrich_status='summarized_ok', enrich_error=NULL, enriched_at_utc=?
+                    WHERE id=?
+                    """,
+                    (s_en, s_zh, utc_now_iso(), int(item_id)),
+                )
+                conn.commit()
+                results.append({
+                    "itemId": int(item_id),
+                    "ok": True,
+                    "model": used_model,
+                    "enLen": len(s_en),
+                    "zhLen": len(s_zh),
+                    "durationMs": int((time.time()-started)*1000),
+                })
+            except Exception as e:
+                err = f"{type(e).__name__}: {e}"
+                conn.execute(
+                    "UPDATE items SET enrich_status='failed', enrich_error=?, enriched_at_utc=? WHERE id=?",
+                    (err, utc_now_iso(), int(item_id)),
+                )
+                conn.commit()
+                results.append({
+                    "itemId": int(item_id),
+                    "ok": False,
+                    "error": err,
+                    "durationMs": int((time.time()-started)*1000),
+                })
+
+            if args.sleep:
+                time.sleep(float(args.sleep))
+
+        out = {"ok": True, "mode": "summarize", "processed": len(rows), "results": results}
         print(json.dumps(out, ensure_ascii=False, indent=2))
         return 0
 
