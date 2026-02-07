@@ -520,27 +520,188 @@ def main() -> int:
         return 0
 
     if args.mode == "run":
-        # One-shot pipeline: abstract -> translate -> summarize -> finalize ok
-        r_abs = do_abstract(int(args.limit))
-        r_tr = do_translate(int(args.limit))
-        r_sum = do_summarize(int(args.limit))
-        marked_ok = run_finalize_ok()
+        # Locked pipeline: select ONE set of item_ids, then enrich each id in order.
+        # This avoids mixing batches across stages.
+
+        ids = [
+            int(r[0])
+            for r in conn.execute(
+                """
+                SELECT id
+                FROM items
+                WHERE enrich_status IS NULL OR enrich_status != 'ok'
+                ORDER BY first_seen_at_utc ASC
+                LIMIT ?
+                """,
+                (int(args.limit),),
+            ).fetchall()
+        ]
+
+        def fetch_item(item_id: int):
+            return conn.execute(
+                """
+                SELECT id, title, link, doi,
+                       abstract, title_zh_tw, abstract_zh_tw,
+                       summary_en, summary_zh_tw,
+                       enrich_status
+                FROM items
+                WHERE id=?
+                """,
+                (int(item_id),),
+            ).fetchone()
+
+        def mark_ok_if_complete(item_id: int) -> bool:
+            cur = conn.execute(
+                """
+                UPDATE items
+                SET enrich_status='ok', enrich_error=NULL
+                WHERE id=?
+                  AND abstract IS NOT NULL AND abstract != ''
+                  AND title_zh_tw IS NOT NULL AND title_zh_tw != ''
+                  AND abstract_zh_tw IS NOT NULL AND abstract_zh_tw != ''
+                  AND summary_en IS NOT NULL AND summary_en != ''
+                  AND summary_zh_tw IS NOT NULL AND summary_zh_tw != ''
+                """,
+                (int(item_id),),
+            )
+            conn.commit()
+            return (cur.rowcount or 0) > 0
+
+        results = []
+        counts = {"items": 0, "abstract": 0, "translate": 0, "summarize": 0, "marked_ok": 0}
+
+        for item_id in ids:
+            counts["items"] += 1
+            item_res = {"itemId": item_id, "stages": []}
+
+            r = fetch_item(item_id)
+            if not r:
+                continue
+
+            title, link, doi = (r[1] or ""), (r[2] or ""), (r[3] or None)
+            abstract = r[4] or ""
+            title_zh = r[5] or ""
+            abs_zh = r[6] or ""
+            sum_en = r[7] or ""
+            sum_zh = r[8] or ""
+
+            # Stage 1: abstract
+            if is_empty(abstract):
+                st = enrich_one_abstract(conn, item_id, title, link, doi, int(args.timeout))
+                item_res["stages"].append({"stage": "abstract", **st})
+                counts["abstract"] += 1
+                # refresh
+                r = fetch_item(item_id)
+                abstract = (r[4] or "") if r else abstract
+
+            # Stage 2: translate (requires abstract)
+            if not is_empty(abstract) and (is_empty(title_zh) or is_empty(abs_zh)):
+                started = time.time()
+                try:
+                    try:
+                        t_zh, a_zh = translate_title_abstract(title, abstract, model=str(args.model_mini))
+                        used_model = str(args.model_mini)
+                    except Exception:
+                        t_zh, a_zh = translate_title_abstract(title, abstract, model=str(args.model_full))
+                        used_model = str(args.model_full)
+
+                    conn.execute(
+                        """
+                        UPDATE items
+                        SET title_zh_tw=?, abstract_zh_tw=?,
+                            enrich_status='translated_ok', enrich_error=NULL, enriched_at_utc=?
+                        WHERE id=?
+                        """,
+                        (t_zh, a_zh, utc_now_iso(), int(item_id)),
+                    )
+                    conn.commit()
+                    item_res["stages"].append({
+                        "stage": "translate",
+                        "ok": True,
+                        "model": used_model,
+                        "titleZhLen": len(t_zh),
+                        "absZhLen": len(a_zh),
+                        "durationMs": int((time.time()-started)*1000),
+                    })
+                except Exception as e:
+                    err = f"{type(e).__name__}: {e}"
+                    conn.execute(
+                        "UPDATE items SET enrich_status='failed', enrich_error=?, enriched_at_utc=? WHERE id=?",
+                        (err, utc_now_iso(), int(item_id)),
+                    )
+                    conn.commit()
+                    item_res["stages"].append({
+                        "stage": "translate",
+                        "ok": False,
+                        "error": err,
+                        "durationMs": int((time.time()-started)*1000),
+                    })
+                counts["translate"] += 1
+                r = fetch_item(item_id)
+                title_zh = (r[5] or "") if r else title_zh
+                abs_zh = (r[6] or "") if r else abs_zh
+
+            # Stage 3: summarize (requires abstract)
+            if not is_empty(abstract) and (is_empty(sum_en) or is_empty(sum_zh)):
+                started = time.time()
+                try:
+                    try:
+                        s_en, s_zh = summarize_en_zh(title, abstract, model=str(args.model_mini))
+                        used_model = str(args.model_mini)
+                    except Exception:
+                        s_en, s_zh = summarize_en_zh(title, abstract, model=str(args.model_full))
+                        used_model = str(args.model_full)
+
+                    conn.execute(
+                        """
+                        UPDATE items
+                        SET summary_en=?, summary_zh_tw=?,
+                            enrich_status='summarized_ok', enrich_error=NULL, enriched_at_utc=?
+                        WHERE id=?
+                        """,
+                        (s_en, s_zh, utc_now_iso(), int(item_id)),
+                    )
+                    conn.commit()
+                    item_res["stages"].append({
+                        "stage": "summarize",
+                        "ok": True,
+                        "model": used_model,
+                        "enLen": len(s_en),
+                        "zhLen": len(s_zh),
+                        "durationMs": int((time.time()-started)*1000),
+                    })
+                except Exception as e:
+                    err = f"{type(e).__name__}: {e}"
+                    conn.execute(
+                        "UPDATE items SET enrich_status='failed', enrich_error=?, enriched_at_utc=? WHERE id=?",
+                        (err, utc_now_iso(), int(item_id)),
+                    )
+                    conn.commit()
+                    item_res["stages"].append({
+                        "stage": "summarize",
+                        "ok": False,
+                        "error": err,
+                        "durationMs": int((time.time()-started)*1000),
+                    })
+                counts["summarize"] += 1
+
+            # Stage 4: finalize ok
+            if mark_ok_if_complete(item_id):
+                counts["marked_ok"] += 1
+                item_res["stages"].append({"stage": "finalize", "ok": True})
+
+            results.append(item_res)
+
+            if args.sleep:
+                time.sleep(float(args.sleep))
 
         out = {
             "ok": True,
             "mode": "run",
             "limit": int(args.limit),
-            "processed": {
-                "abstract": len(r_abs),
-                "translate": len(r_tr),
-                "summarize": len(r_sum),
-                "marked_ok": marked_ok,
-            },
-            "results": {
-                "abstract": r_abs,
-                "translate": r_tr,
-                "summarize": r_sum,
-            },
+            "lockedIds": ids,
+            "processed": counts,
+            "results": results,
             "models": {"mini": str(args.model_mini), "full": str(args.model_full)},
         }
         print(json.dumps(out, ensure_ascii=False, indent=2))
