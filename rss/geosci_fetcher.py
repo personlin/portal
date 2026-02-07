@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""GeoSci RSS Fetcher (Step 3C): fetch + log per-feed, no item parsing yet.
+"""GeoSci RSS Fetcher (Step 3D): fetch + log per-feed, parse items, store in SQLite.
 
 - Selects feeds using the same ordering as geosci_select_feeds.py.
 - Fetches up to N feeds (default 1 for Step 3C).
@@ -17,6 +17,8 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import hashlib
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
 WORKSPACE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -26,6 +28,109 @@ if WORKSPACE not in sys.path:
 from rss.db import rss_store  # type: ignore
 
 USER_AGENT = "OpenClaw GeoSci Fetcher/1.0"
+DELIVERY_CHANNEL = "geosci"
+DELIVERY_TARGET = "morning_digest"
+
+
+def sha1(s: str) -> str:
+    return hashlib.sha1(s.encode("utf-8", errors="ignore")).hexdigest()
+
+
+def normalize_id(feed_url: str, entry: dict) -> str:
+    # Prefer explicit ids
+    for k in ("id", "guid", "link"):
+        v = entry.get(k)
+        if v:
+            return sha1(f"{feed_url}|{k}|{v}")
+    # Fallback: title+published
+    title = entry.get("title") or ""
+    published = entry.get("published") or ""
+    return sha1(f"{feed_url}|fallback|{title}|{published}")
+
+
+def parse_feed(feed_url: str, data: bytes) -> tuple[str | None, list[dict]]:
+    """Parse RSS 2.0 or Atom into (feed_title, items)."""
+    try:
+        root = ET.fromstring(data)
+    except ET.ParseError:
+        return None, []
+
+    def strip_ns(tag: str) -> str:
+        return tag.split("}")[-1] if "}" in tag else tag
+
+    def text(el: ET.Element | None) -> str | None:
+        if el is None:
+            return None
+        t = (el.text or "").strip()
+        return t or None
+
+    def find_first(el: ET.Element, names: list[str]) -> ET.Element | None:
+        for n in names:
+            r = el.find(n)
+            if r is not None:
+                return r
+        return None
+
+    root_tag = strip_ns(root.tag).lower()
+
+    items: list[dict] = []
+    feed_title: str | None = None
+
+    if root_tag == "rss":
+        channel = next((c for c in list(root) if strip_ns(c.tag).lower() == "channel"), None)
+        if channel is None:
+            return None, []
+        feed_title = text(find_first(channel, ["title"]))
+        for item in channel.findall("item"):
+            title = text(find_first(item, ["title"]))
+            link = text(find_first(item, ["link"]))
+            guid = text(find_first(item, ["guid"]))
+            pub = text(find_first(item, ["pubDate"]))
+            items.append({"title": title, "link": link, "guid": guid, "published": pub})
+
+    elif root_tag == "feed":
+        feed_title = text(find_first(root, ["title"]))
+        for child in list(root):
+            if strip_ns(child.tag).lower() != "entry":
+                continue
+            title = None
+            link = None
+            entry_id = None
+            published = None
+            updated = None
+            for sub in list(child):
+                st = strip_ns(sub.tag).lower()
+                if st == "title":
+                    title = (sub.text or "").strip() or None
+                elif st == "id":
+                    entry_id = (sub.text or "").strip() or None
+                elif st == "published":
+                    published = (sub.text or "").strip() or None
+                elif st == "updated":
+                    updated = (sub.text or "").strip() or None
+                elif st == "link":
+                    href = sub.attrib.get("href")
+                    rel = (sub.attrib.get("rel") or "alternate").lower()
+                    if href and (link is None or rel == "alternate"):
+                        link = href
+            items.append({"title": title, "link": link, "id": entry_id, "published": published or updated, "updated": updated})
+
+    else:
+        # generic fallback
+        for item in root.findall(".//item"):
+            title = text(find_first(item, ["title"]))
+            link = text(find_first(item, ["link"]))
+            guid = text(find_first(item, ["guid"]))
+            pub = text(find_first(item, ["pubDate"]))
+            items.append({"title": title, "link": link, "guid": guid, "published": pub})
+
+    cleaned = []
+    for it in items:
+        if not (it.get("title") or it.get("link")):
+            continue
+        cleaned.append(it)
+
+    return feed_title, cleaned
 
 
 def utc_now_iso() -> str:
@@ -108,6 +213,7 @@ def main() -> int:
     results = []
     success = 0
     errors = 0
+    inserted_total = 0
 
     for f in feeds:
         feed_id = int(f["id"])
@@ -119,12 +225,38 @@ def main() -> int:
         bytes_n = None
         ok = None
         err = None
-        new_items_count = None  # not parsed yet
+        new_items_count = 0
+        inserted_new = 0
+
+        data = b""
+        hdrs = {}
 
         try:
             status, data, hdrs = fetch_url(url, etag=f.get("etag"), last_modified=f.get("last_modified"), timeout=int(args.timeout))
             bytes_n = len(data)
             ok = 1 if (200 <= int(status) < 400 or int(status) == 304) else 0
+
+            if ok and int(status) != 304 and data:
+                feed_title, items = parse_feed(url, data)
+                for it in items:
+                    entry = {
+                        "feedUrl": url,
+                        "feedTitle": feed_title,
+                        "title": it.get("title"),
+                        "link": it.get("link"),
+                        "guid": it.get("guid"),
+                        "id": it.get("id"),
+                        "published": it.get("published"),
+                        "updated": it.get("updated"),
+                    }
+                    dedup = normalize_id(url, entry)
+                    item_id, inserted = rss_store.upsert_item(conn, feed_id=feed_id, dedup_hash=dedup, entry=entry)
+                    if inserted:
+                        inserted_new += 1
+                        inserted_total += 1
+                        rss_store.ensure_delivery(conn, item_id=item_id, channel=DELIVERY_CHANNEL, target=DELIVERY_TARGET, batch_id=None)
+
+                new_items_count = inserted_new
 
             # Update feed metadata
             now = utc_now_iso()
@@ -178,7 +310,7 @@ def main() -> int:
             ok=bool(ok),
             http_status=int(status) if status is not None else None,
             bytes_n=int(bytes_n) if bytes_n is not None else None,
-            new_items_count=new_items_count,
+            new_items_count=int(new_items_count),
             error=err,
         )
 
@@ -189,6 +321,7 @@ def main() -> int:
                 "ok": bool(ok),
                 "httpStatus": status,
                 "bytes": bytes_n,
+                "insertedNew": inserted_new,
                 "durationMs": int((time.time() - t0) * 1000),
                 "error": err,
             }
@@ -201,7 +334,7 @@ def main() -> int:
         feed_count=len(feeds),
         success_count=success,
         error_count=errors,
-        notes="step3c:no-parse",
+        notes="step3d:parse+store",
     )
 
     out = {
@@ -210,6 +343,7 @@ def main() -> int:
         "runStartedAtUtc": run_started,
         "kind": str(args.kind),
         "limit": int(args.limit),
+        "insertedTotal": int(inserted_total),
         "results": results,
     }
     print(json.dumps(out, ensure_ascii=False, indent=2))
