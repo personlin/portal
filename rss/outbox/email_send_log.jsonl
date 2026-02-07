@@ -3,3 +3,4 @@
 {"ts": 1770384898, "ok": true, "attempt": 1, "maxAttempts": 3, "from": "p0937087703@gmail.com", "to": "personlin@gmail.com", "subject": "[SMTP測試 retry]", "smtpHost": "smtp.gmail.com", "smtpPort": 587, "timeout": 30, "durationMs": 5889}
 {"ts": 1770385185, "ok": true, "attempt": 1, "maxAttempts": 3, "from": "p0937087703@gmail.com", "to": "personlin@gmail.com", "subject": "[2C測試] 早安彙整 2026-02-06", "smtpHost": "smtp.gmail.com", "smtpPort": 587, "timeout": 30, "durationMs": 2461}
 {"ts": 1770422446, "ok": true, "attempt": 1, "maxAttempts": 3, "from": "p0937087703@gmail.com", "to": "personlin@gmail.com", "subject": "早安彙整 2026-02-07", "smtpHost": "smtp.gmail.com", "smtpPort": 587, "timeout": 30, "durationMs": 2896}
+{"ts": 1770429846, "ok": true, "attempt": 1, "maxAttempts": 3, "from": "p0937087703@gmail.com", "to": "personlin@gmail.com", "subject": "[5D測試] 早安彙整 2026-02-07", "smtpHost": "smtp.gmail.com", "smtpPort": 587, "timeout": 30, "durationMs": 2501}
