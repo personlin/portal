@@ -121,26 +121,26 @@ def main() -> int:
                     lines.append(f"- DOI: {doi}")
                 lines.append("")
 
-                # 3) Abstracts
+                # 3) Abstracts (bounded)
                 lines.append("**Abstract (EN)**")
                 lines.append("")
-                lines.append(clip(abs_en, 3000) if abs_en else "（pending enrichment：Abstract EN）")
+                lines.append(clip(abs_en, 2000) if abs_en else "（pending enrichment：Abstract EN）")
                 lines.append("")
 
                 lines.append("**Abstract (zh-TW)**")
                 lines.append("")
-                lines.append(clip(abs_zh, 3000) if abs_zh else "（pending enrichment：Abstract zh-TW）")
+                lines.append(clip(abs_zh, 2000) if abs_zh else "（pending enrichment：Abstract zh-TW）")
                 lines.append("")
 
-                # 4) Summaries
+                # 4) Summaries (bounded)
                 lines.append("**Summary (EN)**")
                 lines.append("")
-                lines.append(clip(sum_en, 900) if sum_en else "（pending enrichment：Summary EN）")
+                lines.append(clip(sum_en, 600) if sum_en else "（pending enrichment：Summary EN）")
                 lines.append("")
 
                 lines.append("**Summary (zh-TW)**")
                 lines.append("")
-                lines.append(clip(sum_zh, 900) if sum_zh else "（pending enrichment：Summary zh-TW）")
+                lines.append(clip(sum_zh, 600) if sum_zh else "（pending enrichment：Summary zh-TW）")
                 lines.append("")
 
                 lines.append("---")
