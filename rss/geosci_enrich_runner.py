@@ -121,6 +121,46 @@ def extract_abstract_from_html(html: str) -> str | None:
     return None
 
 
+def openai_response_json(prompt: str, model: str) -> dict:
+    key = os.environ.get("OPENAI_API_KEY")
+    if not key:
+        raise RuntimeError("OPENAI_API_KEY not set")
+
+    payload = {"model": model, "input": prompt, "text": {"format": {"type": "json_object"}}}
+    req = urllib.request.Request(
+        "https://api.openai.com/v1/responses",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+        method="POST",
+    )
+    raw = urllib.request.urlopen(req, timeout=120).read().decode("utf-8", errors="ignore")
+    data = json.loads(raw)
+
+    parts = []
+    for o in data.get("output", []) or []:
+        for c in (o.get("content") or []):
+            if c.get("type") == "output_text" and c.get("text"):
+                parts.append(c["text"])
+    txt = "\n".join(parts).strip()
+    return json.loads(txt)
+
+
+def translate_title_abstract(title_en: str, abstract_en: str, model: str) -> tuple[str, str]:
+    prompt = (
+        "你是專業科學編輯。請將以下英語內容翻譯成繁體中文（台灣用語），保持術語一致、語氣精準。\n"
+        "要求：\n"
+        "- 只輸出 JSON，格式：{\"title_zh_tw\":..., \"abstract_zh_tw\":...}\n"
+        "- 不要加入任何多餘文字。\n\n"
+        f"TITLE: {title_en}\n\nABSTRACT: {abstract_en}"
+    )
+    obj = openai_response_json(prompt, model=model)
+    t = (obj.get("title_zh_tw") or "").strip()
+    a = (obj.get("abstract_zh_tw") or "").strip()
+    if len(t) < 4 or len(a) < 40:
+        raise RuntimeError("translation_too_short")
+    return t, a
+
+
 def enrich_one_abstract(conn, item_id: int, title: str, link: str, doi: str | None, timeout: int) -> dict:
     started = time.time()
     err_parts = []
@@ -195,10 +235,12 @@ def main() -> int:
     import argparse
 
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", choices=["stats", "abstract"], default="stats")
+    ap.add_argument("--mode", choices=["stats", "abstract", "translate"], default="stats")
     ap.add_argument("--limit", type=int, default=50)
     ap.add_argument("--timeout", type=int, default=25)
     ap.add_argument("--sleep", type=float, default=0.0)
+    ap.add_argument("--model-mini", default=os.environ.get("GEOSCI_TRANSLATE_MODEL_MINI", "gpt-4o-mini"))
+    ap.add_argument("--model-full", default=os.environ.get("GEOSCI_TRANSLATE_MODEL_FULL", "gpt-4o"))
     args = ap.parse_args()
 
     conn = rss_store.connect()
@@ -225,6 +267,71 @@ def main() -> int:
                 time.sleep(float(args.sleep))
 
         out = {"ok": True, "mode": "abstract", "processed": len(rows), "results": results}
+        print(json.dumps(out, ensure_ascii=False, indent=2))
+        return 0
+
+    if args.mode == "translate":
+        rows = conn.execute(
+            """
+            SELECT id, title, abstract, title_zh_tw, abstract_zh_tw
+            FROM items
+            WHERE enrich_status IN ('abstract_ok','translated_ok','summarized_ok')
+              AND abstract IS NOT NULL AND abstract != ''
+              AND (title_zh_tw IS NULL OR title_zh_tw='' OR abstract_zh_tw IS NULL OR abstract_zh_tw='')
+            ORDER BY first_seen_at_utc ASC
+            LIMIT ?
+            """,
+            (int(args.limit),),
+        ).fetchall()
+
+        results = []
+        for (item_id, title, abstract, title_zh, abs_zh) in rows:
+            started = time.time()
+            try:
+                # If either missing, translate both from EN to keep consistent.
+                try:
+                    t_zh, a_zh = translate_title_abstract(title or "", abstract or "", model=str(args.model_mini))
+                    used_model = str(args.model_mini)
+                except Exception:
+                    t_zh, a_zh = translate_title_abstract(title or "", abstract or "", model=str(args.model_full))
+                    used_model = str(args.model_full)
+
+                conn.execute(
+                    """
+                    UPDATE items
+                    SET title_zh_tw=?, abstract_zh_tw=?,
+                        enrich_status='translated_ok', enrich_error=NULL, enriched_at_utc=?
+                    WHERE id=?
+                    """,
+                    (t_zh, a_zh, utc_now_iso(), int(item_id)),
+                )
+                conn.commit()
+                results.append({
+                    "itemId": int(item_id),
+                    "ok": True,
+                    "model": used_model,
+                    "titleZhLen": len(t_zh),
+                    "absZhLen": len(a_zh),
+                    "durationMs": int((time.time()-started)*1000),
+                })
+            except Exception as e:
+                err = f"{type(e).__name__}: {e}"
+                conn.execute(
+                    "UPDATE items SET enrich_status='failed', enrich_error=?, enriched_at_utc=? WHERE id=?",
+                    (err, utc_now_iso(), int(item_id)),
+                )
+                conn.commit()
+                results.append({
+                    "itemId": int(item_id),
+                    "ok": False,
+                    "error": err,
+                    "durationMs": int((time.time()-started)*1000),
+                })
+
+            if args.sleep:
+                time.sleep(float(args.sleep))
+
+        out = {"ok": True, "mode": "translate", "processed": len(rows), "results": results}
         print(json.dumps(out, ensure_ascii=False, indent=2))
         return 0
 
