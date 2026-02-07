@@ -19,7 +19,7 @@ import urllib.error
 import urllib.request
 import hashlib
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 WORKSPACE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if WORKSPACE not in sys.path:
@@ -258,14 +258,20 @@ def main() -> int:
 
                 new_items_count = inserted_new
 
-            # Update feed metadata
+            # Update feed metadata (success)
             now = utc_now_iso()
             if ok:
+                # schedule next fetch ~6h later (scheduler also runs every 6h)
+                next_fetch = datetime.now(timezone.utc).replace(microsecond=0)
+                next_fetch_iso = (next_fetch + timedelta(hours=6)).isoformat().replace("+00:00", "Z")
+
                 conn.execute(
                     """
                     UPDATE feeds
                     SET last_fetch_at_utc=?, last_success_at_utc=?, last_error=NULL,
                         consecutive_failures=0,
+                        priority=CASE WHEN priority>0 THEN priority-1 ELSE 0 END,
+                        next_fetch_after_utc=?,
                         etag=COALESCE(?, etag),
                         last_modified=COALESCE(?, last_modified),
                         updated_at_utc=?
@@ -274,6 +280,7 @@ def main() -> int:
                     (
                         now,
                         now,
+                        next_fetch_iso,
                         hdrs.get("etag"),
                         hdrs.get("last-modified"),
                         now,
@@ -289,11 +296,18 @@ def main() -> int:
             errors += 1
             err = f"{type(e).__name__}: {e}"
             now = utc_now_iso()
+
+            # Failure: prioritize next time.
+            # - next_fetch_after_utc set to now so selector ranks it earlier
+            # - priority bump (capped) so repeated failures stay on top
             conn.execute(
                 """
                 UPDATE feeds
-                SET last_fetch_at_utc=?, last_error=?, consecutive_failures=consecutive_failures+1,
-                    next_fetch_after_utc=?, updated_at_utc=?
+                SET last_fetch_at_utc=?, last_error=?,
+                    consecutive_failures=consecutive_failures+1,
+                    next_fetch_after_utc=?,
+                    priority=MIN(priority+1, 50),
+                    updated_at_utc=?
                 WHERE id=?
                 """,
                 (now, err, now, now, feed_id),
