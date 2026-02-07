@@ -39,12 +39,27 @@ def main() -> int:
     ap.add_argument("--channel", default="geosci")
     ap.add_argument("--target", default="morning_digest")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--include-sent", action="store_true", help="Preview recently sent items (for formatting checks)")
     args = ap.parse_args()
 
     conn = rss_store.connect()
     rss_store.init_db(conn)
 
-    rows = rss_store.list_pending_items(conn, channel=str(args.channel), target=str(args.target), limit=int(args.limit))
+    if args.include_sent:
+        rows = conn.execute(
+            """
+            SELECT i.*, f.url AS feed_url, COALESCE(f.title,f.url) AS feed_title, d.id AS delivery_id, d.status AS delivery_status
+            FROM deliveries d
+            JOIN items i ON i.id = d.item_id
+            JOIN feeds f ON f.id = i.feed_id
+            WHERE d.channel = ? AND d.target = ? AND d.status = 'sent'
+            ORDER BY d.sent_at_utc DESC
+            LIMIT ?
+            """,
+            (str(args.channel), str(args.target), int(args.limit)),
+        ).fetchall()
+    else:
+        rows = rss_store.list_pending_items(conn, channel=str(args.channel), target=str(args.target), limit=int(args.limit))
     date_tpe = taipei_date()
     out_path = args.out or f"/tmp/geosci-db-{date_tpe}.md"
 
@@ -62,40 +77,73 @@ def main() -> int:
     if not rows:
         lines.append("## No pending items")
     else:
-        # Group by feed
+        # Group by feed (use human-friendly journal/feed title)
         by_feed: dict[str, list] = {}
         for r in rows:
             key = r["feed_title"] or r["feed_url"]
             by_feed.setdefault(key, []).append(r)
 
+        def clip(s: str, n: int) -> str:
+            s = (s or "").strip()
+            return s if len(s) <= n else (s[: n - 1] + "…")
+
         for feed_title in sorted(by_feed.keys()):
             items = by_feed[feed_title]
             lines.append(f"## {md_escape(feed_title)} ({len(items)})")
             lines.append("")
+
             for r in items:
-                t = md_escape(r["title"] or "(no title)")
+                title_en = md_escape(r["title"] or "(no title)")
+                title_zh = md_escape(((r["title_zh_tw"] if "title_zh_tw" in r.keys() else None) or "").strip())
+                if not title_zh:
+                    title_zh = "（pending enrichment：繁中標題）"
+
                 link = (r["link"] or "").strip()
                 pub = (r["published_at"] or "").strip()
-                doi = (r["doi"] or "").strip() if "doi" in r.keys() else ""
+                doi = ((r["doi"] if "doi" in r.keys() else None) or "").strip()
 
-                lines.append(f"### {t}")
+                abs_en = ((r["abstract"] if "abstract" in r.keys() else None) or "").strip()
+                abs_zh = ((r["abstract_zh_tw"] if "abstract_zh_tw" in r.keys() else None) or "").strip()
+                sum_en = ((r["summary_en"] if "summary_en" in r.keys() else None) or "").strip()
+                sum_zh = ((r["summary_zh_tw"] if "summary_zh_tw" in r.keys() else None) or "").strip()
+
+                # 1) Titles
+                lines.append(f"### {title_en}")
+                lines.append(f"### {title_zh}")
+                lines.append("")
+
+                # 2) Metadata
                 if link:
                     lines.append(f"- Link: {link}")
                 if pub:
                     lines.append(f"- Published: {pub}")
                 if doi:
                     lines.append(f"- DOI: {doi}")
+                lines.append("")
 
-                abs_txt = (r["abstract"] or "").strip() if "abstract" in r.keys() else ""
-                if abs_txt:
-                    lines.append("")
-                    lines.append("**Abstract**")
-                    lines.append("")
-                    # keep it bounded for now
-                    if len(abs_txt) > 2500:
-                        abs_txt = abs_txt[:2499] + "…"
-                    lines.append(abs_txt)
+                # 3) Abstracts
+                lines.append("**Abstract (EN)**")
+                lines.append("")
+                lines.append(clip(abs_en, 3000) if abs_en else "（pending enrichment：Abstract EN）")
+                lines.append("")
 
+                lines.append("**Abstract (zh-TW)**")
+                lines.append("")
+                lines.append(clip(abs_zh, 3000) if abs_zh else "（pending enrichment：Abstract zh-TW）")
+                lines.append("")
+
+                # 4) Summaries
+                lines.append("**Summary (EN)**")
+                lines.append("")
+                lines.append(clip(sum_en, 900) if sum_en else "（pending enrichment：Summary EN）")
+                lines.append("")
+
+                lines.append("**Summary (zh-TW)**")
+                lines.append("")
+                lines.append(clip(sum_zh, 900) if sum_zh else "（pending enrichment：Summary zh-TW）")
+                lines.append("")
+
+                lines.append("---")
                 lines.append("")
 
     content = "\n".join(lines)
