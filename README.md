@@ -1,14 +1,15 @@
-# portal
+# portal (Hugo)
 
-Personal portal site (GitHub Pages).
+This repository is a Hugo-powered GitHub Pages portal.
 
-## Development
+## Local preview
+
+Install Hugo (extended) and run:
 
 ```bash
-npm install
-npm run dev
+hugo server
 ```
 
 ## Deploy
 
-Deployment is handled by GitHub Actions to GitHub Pages.
+GitHub Actions builds the site with Hugo and deploys to GitHub Pages.

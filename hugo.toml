@@ -1,0 +1,10 @@
+baseURL = 'https://personlin.github.io/portal/'
+languageCode = 'zh-tw'
+title = 'Portal'
+# This is a GitHub Project Pages site (https://personlin.github.io/portal/)
+# so we must set the correct base path.
+canonifyURLs = true
+relativeURLs = false
+
+[params]
+  description = 'Personal portal'
