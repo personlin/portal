@@ -24,12 +24,23 @@ import time
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
+import sys
+
+# allow importing rss.db when run as script
+WORKSPACE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if WORKSPACE_PATH not in sys.path:
+    sys.path.insert(0, WORKSPACE_PATH)
+
+from rss.db import rss_store  # type: ignore
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WORKSPACE = os.path.dirname(BASE_DIR)
 OUTBOX_DIR = os.path.join(BASE_DIR, "outbox")
 SEND_EMAIL = os.path.join(WORKSPACE, "email", "send_email.py")
 EMAIL_LOG = os.path.join(OUTBOX_DIR, "email_send_log.jsonl")
 APP_PW_FILE = "/home/person/.openclaw/credentials/gmail-p0937087703-app-password.txt"
+DB_PATH = os.path.join(BASE_DIR, "db", "geosci_rss.sqlite")
+DIGEST_KIND = "morning_digest"
 
 
 def taipei_date() -> str:
@@ -48,6 +59,36 @@ def read_text(path: str) -> str:
 
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def upsert_digest_delivery(*, date_tpe: str, channel: str, target: str, status: str, batch_id: str | None, error: str | None) -> None:
+    # DB should already exist, but init_db is idempotent.
+    conn = rss_store.connect(DB_PATH)
+    rss_store.init_db(conn)
+    now = rss_store.utc_now_iso()
+    conn.execute(
+        """
+        INSERT INTO digest_deliveries(kind,date_taipei,channel,target,batch_id,status,created_at_utc,sent_at_utc,error)
+        VALUES (?,?,?,?,?,?,?,?,?)
+        ON CONFLICT(kind,date_taipei,channel,target) DO UPDATE SET
+          batch_id=excluded.batch_id,
+          status=excluded.status,
+          sent_at_utc=excluded.sent_at_utc,
+          error=excluded.error
+        """,
+        (
+            DIGEST_KIND,
+            date_tpe,
+            channel,
+            target,
+            batch_id,
+            status,
+            now,
+            now if status == "sent" else None,
+            error,
+        ),
+    )
+    conn.commit()
 
 
 def main() -> int:
@@ -152,6 +193,27 @@ def main() -> int:
         })
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(payload, f, ensure_ascii=False, indent=2)
+
+        batch_id = f"morning-{date_tpe}"
+        if args.telegram_ok:
+            upsert_digest_delivery(
+                date_tpe=date_tpe,
+                channel="telegram",
+                target="401392371",
+                status="sent",
+                batch_id=batch_id,
+                error=None,
+            )
+        else:
+            upsert_digest_delivery(
+                date_tpe=date_tpe,
+                channel="telegram",
+                target="401392371",
+                status="failed",
+                batch_id=batch_id,
+                error=args.telegram_error,
+            )
+
         print(json.dumps({"ok": True, "marked": True, "telegram": tg_meta}, ensure_ascii=False))
         return 0
 
@@ -198,6 +260,8 @@ def main() -> int:
             ]
 
             t0 = time.time()
+            # batch_id is stable per day (helps dedupe); use outbox base key.
+            batch_id = f"morning-{date_tpe}"
             try:
                 subprocess.check_call(cmd)
                 out["sendEmailDidSend"] = True
@@ -208,15 +272,32 @@ def main() -> int:
                     "durationMs": int((time.time() - t0) * 1000),
                     "lastError": None,
                 })
+                upsert_digest_delivery(
+                    date_tpe=date_tpe,
+                    channel="email",
+                    target=str((payload.get("email") or {}).get("to") or ""),
+                    status="sent",
+                    batch_id=batch_id,
+                    error=None,
+                )
             except Exception as e:
                 out["sendEmailDidSend"] = False
+                err_s = f"{type(e).__name__}: {e}"
                 email_meta.update({
                     "ok": False,
                     "sentAtUtc": None,
                     "subject": subj,
                     "durationMs": int((time.time() - t0) * 1000),
-                    "lastError": f"{type(e).__name__}: {e}",
+                    "lastError": err_s,
                 })
+                upsert_digest_delivery(
+                    date_tpe=date_tpe,
+                    channel="email",
+                    target=str((payload.get("email") or {}).get("to") or ""),
+                    status="failed",
+                    batch_id=batch_id,
+                    error=err_s,
+                )
 
             # Write back payload status
             with open(json_path, "w", encoding="utf-8") as f:
