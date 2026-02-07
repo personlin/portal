@@ -25,9 +25,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WORKSPACE = os.path.dirname(BASE_DIR)
 OUTBOX_DIR = os.path.join(BASE_DIR, "outbox")
 
-RSS_WATCHER = os.path.join(BASE_DIR, "rss_watcher.py")
-RSS_ENRICH = os.path.join(BASE_DIR, "rss_enrich.py")
-RSS_TO_GIST = os.path.join(BASE_DIR, "rss_to_gist.py")
+GEOSCI_DB_TO_GIST = os.path.join(BASE_DIR, "geosci_db_to_gist.py")
 EQ_DIGEST = os.path.join(BASE_DIR, "earthquake_digest.py")
 TECH_RPI = os.path.join(BASE_DIR, "technews_rpi_watcher.py")
 CRYPTO = os.path.join(WORKSPACE, "crypto", "crypto_watcher.py")
@@ -139,22 +137,11 @@ def linkify(url: str) -> str:
 def main() -> int:
     date_tpe = taipei_date()
 
-    # 1) GeoSci RSS -> gist
-    rss_json_path = "/tmp/rss.json"
-    rss_enriched_path = "/tmp/rss_enriched.json"
-
-    rss = run_json(["python3", RSS_WATCHER])
-    with open(rss_json_path, "w", encoding="utf-8") as f:
-        json.dump(rss, f, ensure_ascii=False)
-
-    # Enrich (best-effort)
-    enr = run_json(["python3", RSS_ENRICH, "--input", rss_json_path])
-    with open(rss_enriched_path, "w", encoding="utf-8") as f:
-        json.dump(enr, f, ensure_ascii=False)
-
-    gist = run_json(["python3", RSS_TO_GIST, "--input", rss_enriched_path, "--max", "12"])
-    gist_url = gist.get("url")
-    rss_count = gist.get("itemCount")
+    # 1) GeoSci RSS -> gist (DB-backed; includes pending from previous runs)
+    geosci = run_json(["python3", GEOSCI_DB_TO_GIST, "--limit", "120"])
+    gist_url = geosci.get("gistUrl")
+    rss_count = geosci.get("includedCount")
+    remaining_pending = geosci.get("remainingPending")
 
     # 2) Crypto
     crypto = run_json(["python3", CRYPTO, "--mode", "summary"])
@@ -197,6 +184,7 @@ def main() -> int:
         "[1] 期刊 RSS（GeoSci）",
         f"- 今日新增：{rss_count or 0} 則",
         f"- 完整內容（Secret Gist）：{gist_url}",
+        f"- 尚未送出：{remaining_pending} 則" if remaining_pending is not None else None,
         "",
         "[2] 加密貨幣（較完整）",
         crypto_long or "（無資料）",
