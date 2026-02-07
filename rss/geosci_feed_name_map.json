@@ -1,0 +1,58 @@
+{
+  "https://pubs.geoscienceworld.org/rss/site_131/advanceAccess_66.xml": {
+    "title": "Geophysics (GeoScienceWorld) — Advance Access",
+    "publisher": "GeoScienceWorld"
+  },
+  "https://pubs.geoscienceworld.org/rss/site_129/advanceAccess_65.xml": {
+    "title": "Seismological Research Letters (SRL) — Advance Access",
+    "publisher": "GeoScienceWorld"
+  },
+  "https://journals.sagepub.com/action/showFeed?ui=0&mi=ehikzz&ai=2b4&jc=eqs&type=axatoc&feed=rss": {
+    "title": "Earthquake Spectra — Ahead of Print",
+    "publisher": "SAGE"
+  },
+  "https://rss.sciencedirect.com/publication/science/00983004": {
+    "title": "Computers & Geosciences (ScienceDirect)",
+    "publisher": "ScienceDirect"
+  },
+  "https://rss.sciencedirect.com/publication/science/0012821X": {
+    "title": "Earth and Planetary Science Letters (ScienceDirect)",
+    "publisher": "ScienceDirect"
+  },
+  "https://rss.sciencedirect.com/publication/science/00137952": {
+    "title": "Earth-Science Reviews (ScienceDirect)",
+    "publisher": "ScienceDirect"
+  },
+  "https://academic.oup.com/rss/site_5282/3148.xml": {
+    "title": "GJI (OUP) — RSS",
+    "publisher": "Oxford Academic"
+  },
+  "https://agupubs.onlinelibrary.wiley.com/action/showFeed?jc=19448007&type=etoc&feed=rss": {
+    "title": "JGR: Solid Earth (AGU/Wiley) — eTOC",
+    "publisher": "AGU/Wiley"
+  },
+  "https://pubs.geoscienceworld.org/rss/site_143/advanceAccess_72.xml": {
+    "title": "GSA Bulletin — Advance Access",
+    "publisher": "GeoScienceWorld"
+  },
+  "https://agupubs.onlinelibrary.wiley.com/action/showFeed?jc=21699356&type=etoc&feed=rss": {
+    "title": "Earth and Space Science (AGU/Wiley) — eTOC",
+    "publisher": "AGU/Wiley"
+  },
+  "https://www.nature.com/ngeo.rss": {
+    "title": "Nature Geoscience",
+    "publisher": "Nature"
+  },
+  "https://agupubs.onlinelibrary.wiley.com/action/showFeed?jc=19449208&type=etoc&feed=rss": {
+    "title": "Geophysical Research Letters (AGU/Wiley) — eTOC",
+    "publisher": "AGU/Wiley"
+  },
+  "https://agupubs.onlinelibrary.wiley.com/action/showFeed?jc=19449194&type=etoc&feed=rss": {
+    "title": "Tectonics (AGU/Wiley) — eTOC",
+    "publisher": "AGU/Wiley"
+  },
+  "https://rss.sciencedirect.com/publication/science/00401951": {
+    "title": "Tectonophysics (ScienceDirect)",
+    "publisher": "ScienceDirect"
+  }
+}

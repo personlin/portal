@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS items (
   guid TEXT,
   link TEXT,
   title TEXT,
+  title_zh_tw TEXT,
   author TEXT,
   published_at TEXT,
   updated_at TEXT,
@@ -79,8 +80,16 @@ CREATE TABLE IF NOT EXISTS items (
   journal TEXT,
 
   abstract TEXT,
+  abstract_zh_tw TEXT,
   abstract_source TEXT,
   content_snippet TEXT,
+
+  summary_en TEXT,
+  summary_zh_tw TEXT,
+
+  enrich_status TEXT,          -- pending|ok|failed
+  enrich_error TEXT,
+  enriched_at_utc TEXT,
 
   raw_entry_json TEXT,
   dedup_hash TEXT NOT NULL UNIQUE,

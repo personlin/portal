@@ -34,11 +34,31 @@ def connect(db_path: str = DB_PATH) -> sqlite3.Connection:
     return conn
 
 
+def _ensure_columns(conn: sqlite3.Connection, table: str, cols: list[tuple[str, str]]) -> None:
+    existing = {r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+    for name, decl in cols:
+        if name in existing:
+            continue
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")
+
+
 def init_db(conn: sqlite3.Connection) -> None:
     if not os.path.exists(SCHEMA_PATH):
         raise FileNotFoundError(SCHEMA_PATH)
     schema = open(SCHEMA_PATH, "r", encoding="utf-8").read()
     conn.executescript(schema)
+
+    # Migrations (safe ALTER for existing DBs)
+    _ensure_columns(conn, "items", [
+        ("title_zh_tw", "TEXT"),
+        ("abstract_zh_tw", "TEXT"),
+        ("summary_en", "TEXT"),
+        ("summary_zh_tw", "TEXT"),
+        ("enrich_status", "TEXT"),
+        ("enrich_error", "TEXT"),
+        ("enriched_at_utc", "TEXT"),
+    ])
+
     conn.commit()
 
 
