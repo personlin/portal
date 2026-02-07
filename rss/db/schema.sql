@@ -129,3 +129,20 @@ CREATE TABLE IF NOT EXISTS digest_batches (
 );
 
 CREATE INDEX IF NOT EXISTS idx_digest_batches_kind_date ON digest_batches(kind, date_taipei);
+
+-- 7) Digest deliveries (morning digest send status)
+CREATE TABLE IF NOT EXISTS digest_deliveries (
+  id INTEGER PRIMARY KEY,
+  kind TEXT NOT NULL,            -- e.g., 'morning_digest'
+  date_taipei TEXT NOT NULL,     -- YYYY-MM-DD
+  channel TEXT NOT NULL,         -- 'telegram'|'email'
+  target TEXT NOT NULL,          -- telegram chat id / email address
+  batch_id TEXT,
+  status TEXT NOT NULL DEFAULT 'pending', -- pending|sent|failed
+  created_at_utc TEXT NOT NULL,
+  sent_at_utc TEXT,
+  error TEXT,
+  UNIQUE(kind, date_taipei, channel, target)
+);
+
+CREATE INDEX IF NOT EXISTS idx_digest_deliveries_status ON digest_deliveries(kind, status, created_at_utc);
