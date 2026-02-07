@@ -112,3 +112,20 @@ CREATE TABLE IF NOT EXISTS deliveries (
 
 CREATE INDEX IF NOT EXISTS idx_deliveries_status ON deliveries(status, created_at_utc);
 CREATE INDEX IF NOT EXISTS idx_deliveries_batch ON deliveries(batch_id);
+
+-- 6) Digest batches (e.g., GeoSci gist history)
+CREATE TABLE IF NOT EXISTS digest_batches (
+  id INTEGER PRIMARY KEY,
+  kind TEXT NOT NULL,               -- e.g., 'geosci'
+  date_taipei TEXT NOT NULL,        -- YYYY-MM-DD
+  batch_id TEXT NOT NULL UNIQUE,    -- correlates with marking deliveries
+  gist_url TEXT,
+  gist_id TEXT,
+  included_count INTEGER NOT NULL DEFAULT 0,
+  remaining_pending_after INTEGER,
+  status TEXT NOT NULL DEFAULT 'created',  -- created|failed
+  error TEXT,
+  created_at_utc TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_digest_batches_kind_date ON digest_batches(kind, date_taipei);
