@@ -13,7 +13,7 @@ draft: false
 **Seismic‐XR: Simulating and Visualizing Seismic Ground Motions in Mixed Reality**
 
 - 期刊：Seismological Research Letters Advance Access
-- 原文連結：https://pubs.geoscienceworld.org/ssa/srl/article/doi/10.1785/0220250169/725511/Seismic-XR-Simulating-and-Visualizing-Seismic
+- 原文連結：[連結](https://pubs.geoscienceworld.org/ssa/srl/article/doi/10.1785/0220250169/725511/Seismic-XR-Simulating-and-Visualizing-Seismic)
 
 ### 摘要（中文）
 
@@ -30,7 +30,7 @@ Seismic-XR is a mixed-reality educational tool that visualizes ground motion so 
 **Prediction of fault slip tendency in CO₂ storage using data-space inversion**
 
 - 期刊：ScienceDirect Publication: Computers & Geosciences
-- 原文連結：https://www.sciencedirect.com/science/article/pii/S0098300426000312?dgcid=rss_sd_all
+- 原文連結：[連結](https://www.sciencedirect.com/science/article/pii/S0098300426000312?dgcid=rss_sd_all)
 
 ### 摘要（中文）
 
@@ -47,7 +47,7 @@ The authors propose a data-space inversion workflow using a VAE (with convolutio
 **Catena matters: Enhancing landslide prediction with soil profile characteristics and explainable AI**
 
 - 期刊：ScienceDirect Publication: Engineering Geology
-- 原文連結：https://www.sciencedirect.com/science/article/pii/S001379522600058X?dgcid=rss_sd_all
+- 原文連結：[連結](https://www.sciencedirect.com/science/article/pii/S001379522600058X?dgcid=rss_sd_all)
 
 ### 摘要（中文）
 

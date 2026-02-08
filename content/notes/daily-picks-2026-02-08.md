@@ -11,7 +11,7 @@ draft: false
 **Deep-learning-based hybrid model with iterative lithology constraints for the enhanced prediction of missing well-logs**
 
 - 期刊：ScienceDirect Publication: Computers & Geosciences
-- 原文連結：https://www.sciencedirect.com/science/article/pii/S0098300426000038?dgcid=rss_sd_all
+- 原文連結：[連結](https://www.sciencedirect.com/science/article/pii/S0098300426000038?dgcid=rss_sd_all)
 
 ### 摘要（中文）
 
