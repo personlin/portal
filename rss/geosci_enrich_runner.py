@@ -62,6 +62,15 @@ def strip_tags(s: str) -> str:
 def extract_doi(link: str) -> str | None:
     if not link:
         return None
+
+    # Special-case Oxford Academic style:
+    # https://academic.oup.com/.../doi/10.1093/gji/ggaf505/8442249
+    # We want DOI = 10.1093/gji/ggaf505
+    m = re.search(r"/doi/(10\.[0-9]{4,9}/[^/?#]+/[^/?#]+)", link)
+    if m:
+        doi = m.group(1).rstrip(").,;]")
+        return doi
+
     pats = [
         r"/doi/(10\.[0-9]{4,9}/[^/?#]+)",
         r"doi\.(?:org|doi:)/(10\.[0-9]{4,9}/[^\s?#]+)",
@@ -708,6 +717,7 @@ def main() -> int:
                         "absZhLen": len(a_zh),
                         "durationMs": int((time.time()-started)*1000),
                     })
+                    print(f"  [translate] ok=True model={used_model} titleZhLen={len(t_zh)} absZhLen={len(a_zh)}", flush=True)
                 except Exception as e:
                     err = f"{type(e).__name__}: {e}"
                     conn.execute(
