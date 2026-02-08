@@ -51,8 +51,8 @@ def outbox_paths(date_tpe: str) -> tuple[str, str, str]:
     return base + ".json", base + ".email.txt", base + ".email.html"
 
 
-def run_json(cmd: list[str]) -> dict:
-    out = subprocess.check_output(cmd, text=True)
+def run_json(cmd: list[str], *, timeout: int = 60) -> dict:
+    out = subprocess.check_output(cmd, text=True, timeout=timeout)
     return json.loads(out)
 
 
@@ -139,7 +139,7 @@ def main() -> int:
 
     # 1) GeoSci RSS -> gist (DB-backed; includes pending from previous runs)
     try:
-        geosci = run_json(["python3", GEOSCI_DB_TO_GIST, "--limit", "120"])
+        geosci = run_json(["python3", GEOSCI_DB_TO_GIST, "--limit", "120"], timeout=180)
         gist_url = geosci.get("gistUrl")
         rss_count = geosci.get("includedCount")
         remaining_pending = geosci.get("remainingPending")
@@ -155,14 +155,14 @@ def main() -> int:
         geosci_error = f"{type(e).__name__}: {e}"
 
     # 2) Crypto
-    crypto = run_json(["python3", CRYPTO, "--mode", "summary"])
+    crypto = run_json(["python3", CRYPTO, "--mode", "summary"], timeout=60)
     crypto_short, crypto_long = fmt_crypto(crypto)
 
     # 3) Earthquake
-    eq = run_json(["python3", EQ_DIGEST])
+    eq = run_json(["python3", EQ_DIGEST], timeout=60)
 
     # 4) Tech news (Raspberry Pi) — daily
-    rpi = run_json(["python3", TECH_RPI])
+    rpi = run_json(["python3", TECH_RPI], timeout=60)
     rpi_new = int(rpi.get("newCount") or 0)
     rpi_items = rpi.get("newItems") or []
 
