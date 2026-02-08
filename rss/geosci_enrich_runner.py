@@ -97,6 +97,18 @@ def crossref_abstract(doi: str) -> str | None:
     return abs_txt if len(abs_txt) > 80 else None
 
 
+def extract_doi_from_html(html: str) -> str | None:
+    for pat in [
+        r'<meta[^>]+name="citation_doi"[^>]+content="([^"]+)"',
+        r'<meta[^>]+name="dc.Identifier"[^>]+content="doi:([^"\s]+)"',
+        r'<meta[^>]+name="dc.Identifier"[^>]+content="([^"]*10\.[0-9]{4,9}/[^"\s]+)"',
+    ]:
+        m = re.search(pat, html, flags=re.I)
+        if m:
+            return (m.group(1) or "").strip()
+    return None
+
+
 def extract_abstract_from_html(html: str) -> str | None:
     meta_patterns = [
         r'<meta[^>]+name="citation_abstract"[^>]+content="([^"]+)"',
@@ -111,12 +123,31 @@ def extract_abstract_from_html(html: str) -> str | None:
             if len(txt) > 80:
                 return txt
 
+    # Generic "Abstract" heading
     m = re.search(r"<h[1-6][^>]*>\s*Abstract\s*</h[1-6]>", html, flags=re.I)
     if m:
-        tail = html[m.end() : m.end() + 10000]
+        tail = html[m.end() : m.end() + 15000]
         txt = strip_tags(tail)
         if len(txt) > 120:
             return txt[:4000]
+
+    # ScienceDirect special-case:
+    # Many SD pages don't include an "Abstract" heading in static HTML.
+    # They often have a <div id="abstracts"> block with "Highlights" (ul),
+    # followed by a plain-text abstract paragraph. Extract text after </ul>.
+    m = re.search(r'id="abstracts"[\s\S]{0,80000}', html, flags=re.I)
+    if m:
+        block = m.group(0)
+        # Only trigger if it looks like ScienceDirect highlights list exists.
+        if re.search(r">\s*Highlights\s*<", block, flags=re.I) and "</ul>" in block:
+            after = block.split("</ul>", 1)[1]
+            txt = strip_tags(after)
+            # Heuristic stop: if "Keywords" appears early, cut there.
+            kw = re.search(r"\bKeywords\b", txt, flags=re.I)
+            if kw and kw.start() > 200:
+                txt = txt[: kw.start()].strip()
+            if len(txt) > 200:
+                return txt[:4000]
 
     return None
 
@@ -187,9 +218,15 @@ def enrich_one_abstract(conn, item_id: int, title: str, link: str, doi: str | No
     abstract = None
     source = None
 
+    html = None
     if link:
         try:
             html = http_get(link, timeout=timeout)
+            # Some publishers (e.g., ScienceDirect) don't embed the abstract in static HTML,
+            # but they do embed DOI in meta tags; extract DOI from HTML as a fallback.
+            if not doi2 and html:
+                doi2 = extract_doi_from_html(html)
+
             abstract = extract_abstract_from_html(html)
             if abstract:
                 source = "html"
@@ -270,7 +307,7 @@ def main() -> int:
             SELECT id, title, link, doi
             FROM items
             WHERE (abstract IS NULL OR abstract='')
-              AND (enrich_status IS NULL OR enrich_status IN ('pending','failed'))
+              AND (enrich_status IS NULL OR enrich_status = 'pending')
             ORDER BY first_seen_at_utc ASC
             LIMIT ?
             """,
