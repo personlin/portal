@@ -43,6 +43,7 @@ def http_get(url: str, timeout: int = 25, accept: str | None = None) -> str:
             "User-Agent": "Mozilla/5.0 (OpenClaw geosci_enrich_runner)",
             "Accept": accept
             or "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
         },
     )
     with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -287,6 +288,7 @@ def enrich_one_abstract(conn, item_id: int, title: str, link: str, doi: str | No
         except Exception as e:
             err_parts.append(f"html:{type(e).__name__}:{e}")
 
+    # Crossref (works well for many publishers, including some OUP)
     if not abstract and doi2:
         try:
             abstract = crossref_abstract(doi2)
@@ -294,6 +296,17 @@ def enrich_one_abstract(conn, item_id: int, title: str, link: str, doi: str | No
                 source = "crossref"
         except Exception as e:
             err_parts.append(f"crossref:{type(e).__name__}:{e}")
+
+    # DOI landing fallback: sometimes academic.oup.com blocks, but doi.org redirects to an accessible landing page.
+    if not abstract and doi2:
+        try:
+            doi_url = f"https://doi.org/{doi2}"
+            html2 = http_get(doi_url, timeout=timeout)
+            abstract = extract_abstract_from_html(html2)
+            if abstract:
+                source = "doi_html"
+        except Exception as e:
+            err_parts.append(f"doi_html:{type(e).__name__}:{e}")
 
     if abstract:
         conn.execute(
