@@ -35,26 +35,60 @@ def main() -> int:
     ap.add_argument("--channel", default="geosci")
     ap.add_argument("--target", default="morning_digest")
     ap.add_argument("--limit", type=int, default=200)
+    ap.add_argument("--min-journals", type=int, default=5, help="Try to queue at least this many distinct journals")
     args = ap.parse_args()
 
     conn = rss_store.connect()
     rss_store.init_db(conn)
 
-    # 1) Reset existing deliveries to pending for ok items
-    # limit by oldest first_seen
-    ids = [
-        r[0]
-        for r in conn.execute(
-            """
-            SELECT i.id
-            FROM items i
-            WHERE i.enrich_status='ok'
-            ORDER BY i.first_seen_at_utc ASC
-            LIMIT ?
-            """,
-            (int(args.limit),),
-        ).fetchall()
-    ]
+    # 1) Select ok items, but queue them in a journal-diverse way.
+    pool_limit = max(int(args.limit) * 10, 400)
+    pool = conn.execute(
+        """
+        SELECT i.id, COALESCE(f.title,f.url) AS journal, i.first_seen_at_utc
+        FROM items i
+        JOIN feeds f ON f.id = i.feed_id
+        WHERE i.enrich_status='ok'
+        ORDER BY i.first_seen_at_utc ASC
+        LIMIT ?
+        """,
+        (int(pool_limit),),
+    ).fetchall()
+
+    by_j = {}
+    for item_id, journal, _fs in pool:
+        by_j.setdefault(journal, []).append(int(item_id))
+
+    journals = list(by_j.keys())
+    # journals already ordered by earliest first_seen due to SELECT ordering + append order
+
+    target_j = max(1, int(args.min_journals))
+
+    picked: list[int] = []
+    distinct = 0
+
+    # First pass: take one from as many journals as possible (up to min-journals)
+    for j in journals:
+        if len(picked) >= int(args.limit):
+            break
+        if distinct >= target_j:
+            break
+        if by_j.get(j):
+            picked.append(by_j[j].pop(0))
+            distinct += 1
+
+    # Round-robin fill until limit
+    idx = 0
+    active = [j for j in journals if by_j.get(j)]
+    while len(picked) < int(args.limit) and active:
+        j = active[idx % len(active)]
+        picked.append(by_j[j].pop(0))
+        active = [jj for jj in active if by_j.get(jj)]
+        idx += 1
+        if idx > 10000:
+            break
+
+    ids = picked
 
     if not ids:
         print(json.dumps({"ok": True, "queued": 0, "note": "no ok items"}, ensure_ascii=False, indent=2))
@@ -70,8 +104,8 @@ def main() -> int:
             delivery_id, status = int(row[0]), row[1]
             if status != 'pending':
                 conn.execute(
-                    "UPDATE deliveries SET status='pending', error=NULL WHERE id=?",
-                    (delivery_id,),
+                    "UPDATE deliveries SET status='pending', error=NULL, created_at_utc=? WHERE id=?",
+                    (rss_store.utc_now_iso(), delivery_id),
                 )
                 q_marks += 1
         else:
