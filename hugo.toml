@@ -8,6 +8,13 @@ relativeURLs = false
 
 theme = 'PaperMod'
 
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+    [markup.goldmark.extensions]
+      linkify = true
+
 [params]
   description = 'Personal portal'
   defaultTheme = 'auto'
