@@ -230,6 +230,7 @@ def should_skip_no_abstract(title: str) -> str | None:
         (r"\bcomment on\b", "comment"),
         (r"\breply to the comment\b", "reply"),
         (r"\berratum\b", "erratum"),
+        (r"^correction to:", "correction"),
     ]
     for pat, code in patterns:
         if re.search(pat, t, flags=re.I):
