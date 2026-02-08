@@ -152,7 +152,7 @@ def extract_abstract_from_html(html: str) -> str | None:
     return None
 
 
-def openai_response_json(prompt: str, model: str) -> dict:
+def openai_response_json(prompt: str, model: str, *, timeout: int = 120) -> dict:
     key = os.environ.get("OPENAI_API_KEY")
     if not key:
         raise RuntimeError("OPENAI_API_KEY not set")
@@ -164,7 +164,7 @@ def openai_response_json(prompt: str, model: str) -> dict:
         headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
         method="POST",
     )
-    raw = urllib.request.urlopen(req, timeout=120).read().decode("utf-8", errors="ignore")
+    raw = urllib.request.urlopen(req, timeout=int(timeout)).read().decode("utf-8", errors="ignore")
     data = json.loads(raw)
 
     parts = []
@@ -176,7 +176,7 @@ def openai_response_json(prompt: str, model: str) -> dict:
     return json.loads(txt)
 
 
-def summarize_en_zh(title_en: str, abstract_en: str, model: str) -> tuple[str, str]:
+def summarize_en_zh(title_en: str, abstract_en: str, model: str, *, timeout: int = 120) -> tuple[str, str]:
     prompt = (
         "You are a scientific editor. Summarize the following paper abstract.\n"
         "Requirements:\n"
@@ -186,7 +186,7 @@ def summarize_en_zh(title_en: str, abstract_en: str, model: str) -> tuple[str, s
         "- Do not add citations or fabricate results not in abstract.\n\n"
         f"TITLE: {title_en}\n\nABSTRACT: {abstract_en}"
     )
-    obj = openai_response_json(prompt, model=model)
+    obj = openai_response_json(prompt, model=model, timeout=timeout)
     s_en = (obj.get("summary_en") or "").strip()
     s_zh = (obj.get("summary_zh_tw") or "").strip()
     if len(s_en) < 40 or len(s_zh) < 20:
@@ -194,7 +194,7 @@ def summarize_en_zh(title_en: str, abstract_en: str, model: str) -> tuple[str, s
     return s_en, s_zh
 
 
-def translate_title_abstract(title_en: str, abstract_en: str, model: str) -> tuple[str, str]:
+def translate_title_abstract(title_en: str, abstract_en: str, model: str, *, timeout: int = 120) -> tuple[str, str]:
     prompt = (
         "你是專業科學編輯。請將以下英語內容翻譯成繁體中文（台灣用語），保持術語一致、語氣精準。\n"
         "要求：\n"
@@ -202,7 +202,7 @@ def translate_title_abstract(title_en: str, abstract_en: str, model: str) -> tup
         "- 不要加入任何多餘文字。\n\n"
         f"TITLE: {title_en}\n\nABSTRACT: {abstract_en}"
     )
-    obj = openai_response_json(prompt, model=model)
+    obj = openai_response_json(prompt, model=model, timeout=timeout)
     t = (obj.get("title_zh_tw") or "").strip()
     a = (obj.get("abstract_zh_tw") or "").strip()
     if len(t) < 4 or len(a) < 40:
@@ -339,6 +339,7 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=50)
     ap.add_argument("--timeout", type=int, default=25)
     ap.add_argument("--sleep", type=float, default=0.0)
+    ap.add_argument("--llm-timeout", type=int, default=120)
     ap.add_argument("--model-mini", default=os.environ.get("GEOSCI_TRANSLATE_MODEL_MINI", "gpt-5-mini"))
     ap.add_argument("--model-full", default=os.environ.get("GEOSCI_TRANSLATE_MODEL_FULL", "gpt-4.1-mini"))
     args = ap.parse_args()
@@ -390,10 +391,10 @@ def main() -> int:
             try:
                 # If either missing, translate both from EN to keep consistent.
                 try:
-                    t_zh, a_zh = translate_title_abstract(title or "", abstract or "", model=str(args.model_mini))
+                    t_zh, a_zh = translate_title_abstract(title or "", abstract or "", model=str(args.model_mini), timeout=int(args.llm_timeout))
                     used_model = str(args.model_mini)
                 except Exception:
-                    t_zh, a_zh = translate_title_abstract(title or "", abstract or "", model=str(args.model_full))
+                    t_zh, a_zh = translate_title_abstract(title or "", abstract or "", model=str(args.model_full), timeout=int(args.llm_timeout))
                     used_model = str(args.model_full)
 
                 conn.execute(
@@ -471,10 +472,10 @@ def main() -> int:
             started = time.time()
             try:
                 try:
-                    s_en, s_zh = summarize_en_zh(title or "", abstract or "", model=str(args.model_mini))
+                    s_en, s_zh = summarize_en_zh(title or "", abstract or "", model=str(args.model_mini), timeout=int(args.llm_timeout))
                     used_model = str(args.model_mini)
                 except Exception:
-                    s_en, s_zh = summarize_en_zh(title or "", abstract or "", model=str(args.model_full))
+                    s_en, s_zh = summarize_en_zh(title or "", abstract or "", model=str(args.model_full), timeout=int(args.llm_timeout))
                     used_model = str(args.model_full)
 
                 conn.execute(
@@ -532,10 +533,10 @@ def main() -> int:
             started = time.time()
             try:
                 try:
-                    t_zh, a_zh = translate_title_abstract(title or "", abstract or "", model=str(args.model_mini))
+                    t_zh, a_zh = translate_title_abstract(title or "", abstract or "", model=str(args.model_mini), timeout=int(args.llm_timeout))
                     used_model = str(args.model_mini)
                 except Exception:
-                    t_zh, a_zh = translate_title_abstract(title or "", abstract or "", model=str(args.model_full))
+                    t_zh, a_zh = translate_title_abstract(title or "", abstract or "", model=str(args.model_full), timeout=int(args.llm_timeout))
                     used_model = str(args.model_full)
 
                 conn.execute(
@@ -652,9 +653,10 @@ def main() -> int:
         results = []
         counts = {"items": 0, "abstract": 0, "translate": 0, "summarize": 0, "marked_ok": 0}
 
-        for item_id in ids:
+        for idx, item_id in enumerate(ids, start=1):
             counts["items"] += 1
             item_res = {"itemId": item_id, "stages": []}
+            print(f"[run] {idx}/{len(ids)} itemId={item_id}", flush=True)
 
             r = fetch_item(item_id)
             if not r:
@@ -672,6 +674,7 @@ def main() -> int:
                 st = enrich_one_abstract(conn, item_id, title, link, doi, int(args.timeout))
                 item_res["stages"].append({"stage": "abstract", **st})
                 counts["abstract"] += 1
+                print(f"  [abstract] ok={st.get('ok')} skipped={st.get('skipped',False)} len={st.get('abstractLen')} doi={st.get('doi')} err={st.get('error')}", flush=True)
                 # refresh
                 r = fetch_item(item_id)
                 abstract = (r[4] or "") if r else abstract
@@ -728,10 +731,10 @@ def main() -> int:
                 started = time.time()
                 try:
                     try:
-                        s_en, s_zh = summarize_en_zh(title, abstract, model=str(args.model_mini))
+                        s_en, s_zh = summarize_en_zh(title, abstract, model=str(args.model_mini), timeout=int(args.llm_timeout))
                         used_model = str(args.model_mini)
                     except Exception:
-                        s_en, s_zh = summarize_en_zh(title, abstract, model=str(args.model_full))
+                        s_en, s_zh = summarize_en_zh(title, abstract, model=str(args.model_full), timeout=int(args.llm_timeout))
                         used_model = str(args.model_full)
 
                     conn.execute(
