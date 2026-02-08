@@ -88,6 +88,7 @@ def main() -> int:
     ap.add_argument("--channel", default="geosci")
     ap.add_argument("--target", default="morning_digest")
     ap.add_argument("--description", default=None)
+    ap.add_argument("--include-sent", action="store_true", help="Preview: include recently sent items (does NOT mark deliveries)")
     args = ap.parse_args()
 
     date_tpe = taipei_date()
@@ -96,7 +97,7 @@ def main() -> int:
     desc = args.description or f"GeoSci RSS Digest (DB) {date_tpe}"
 
     # 1) Build markdown
-    md = run_json([
+    md_cmd = [
         "python3",
         DB_TO_MD,
         "--limit",
@@ -107,7 +108,10 @@ def main() -> int:
         str(args.target),
         "--out",
         out_md,
-    ])
+    ]
+    if args.include_sent:
+        md_cmd.append("--include-sent")
+    md = run_json(md_cmd)
 
     # 2) Upload gist
     gist = run_json([
@@ -138,6 +142,23 @@ def main() -> int:
 
     gist_url = gist.get("url")
     gist_id = gist.get("id")
+
+    if args.include_sent:
+        # Preview mode: do NOT mark delivered / do NOT record as a batch.
+        out = {
+            "ok": True,
+            "dateTaipei": date_tpe,
+            "includedCount": int(md.get("count") or 0),
+            "mdPath": md.get("outPath"),
+            "gistUrl": gist_url,
+            "gistId": gist_id,
+            "batchId": f"preview-{rss_store.utc_now_iso()}",
+            "markedSent": 0,
+            "remainingPending": None,
+            "preview": True,
+        }
+        print(json.dumps(out, ensure_ascii=False, indent=2))
+        return 0
 
     # 3) Mark delivered (sent)
     marked = run_json([
