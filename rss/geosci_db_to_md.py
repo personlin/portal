@@ -40,26 +40,47 @@ def main() -> int:
     ap.add_argument("--target", default="morning_digest")
     ap.add_argument("--out", default=None)
     ap.add_argument("--include-sent", action="store_true", help="Preview recently sent items (for formatting checks)")
+    ap.add_argument("--only-ok", action="store_true", help="Only include items with enrich_status='ok' (complete fields)")
     args = ap.parse_args()
 
     conn = rss_store.connect()
     rss_store.init_db(conn)
 
+    status_clause = "1=1"
+    if args.only_ok:
+        status_clause = "i.enrich_status = 'ok'"
+
     if args.include_sent:
         rows = conn.execute(
-            """
+            f"""
             SELECT i.*, f.url AS feed_url, COALESCE(f.title,f.url) AS feed_title, d.id AS delivery_id, d.status AS delivery_status
             FROM deliveries d
             JOIN items i ON i.id = d.item_id
             JOIN feeds f ON f.id = i.feed_id
             WHERE d.channel = ? AND d.target = ? AND d.status = 'sent'
+              AND {status_clause}
             ORDER BY d.sent_at_utc DESC
             LIMIT ?
             """,
             (str(args.channel), str(args.target), int(args.limit)),
         ).fetchall()
     else:
-        rows = rss_store.list_pending_items(conn, channel=str(args.channel), target=str(args.target), limit=int(args.limit))
+        if args.only_ok:
+            rows = conn.execute(
+                f"""
+                SELECT i.*, f.url AS feed_url, COALESCE(f.title,f.url) AS feed_title, d.id AS delivery_id, d.status AS delivery_status
+                FROM deliveries d
+                JOIN items i ON i.id = d.item_id
+                JOIN feeds f ON f.id = i.feed_id
+                WHERE d.channel = ? AND d.target = ? AND d.status IN ('pending','failed')
+                  AND {status_clause}
+                ORDER BY d.created_at_utc ASC
+                LIMIT ?
+                """,
+                (str(args.channel), str(args.target), int(args.limit)),
+            ).fetchall()
+        else:
+            rows = rss_store.list_pending_items(conn, channel=str(args.channel), target=str(args.target), limit=int(args.limit))
     date_tpe = taipei_date()
     out_path = args.out or f"/tmp/geosci-db-{date_tpe}.md"
 

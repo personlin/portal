@@ -139,7 +139,7 @@ def main() -> int:
 
     # 1) GeoSci RSS -> gist (DB-backed; includes pending from previous runs)
     try:
-        geosci = run_json(["python3", GEOSCI_DB_TO_GIST, "--limit", "120"], timeout=180)
+        geosci = run_json(["python3", GEOSCI_DB_TO_GIST, "--limit", "120", "--only-ok"], timeout=180)
         gist_url = geosci.get("gistUrl")
         rss_count = geosci.get("includedCount")
         remaining_pending = geosci.get("remainingPending")

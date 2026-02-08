@@ -89,6 +89,7 @@ def main() -> int:
     ap.add_argument("--target", default="morning_digest")
     ap.add_argument("--description", default=None)
     ap.add_argument("--include-sent", action="store_true", help="Preview: include recently sent items (does NOT mark deliveries)")
+    ap.add_argument("--only-ok", action="store_true", help="Only include items with enrich_status='ok' (complete fields)")
     args = ap.parse_args()
 
     date_tpe = taipei_date()
@@ -111,6 +112,8 @@ def main() -> int:
     ]
     if args.include_sent:
         md_cmd.append("--include-sent")
+    if args.only_ok:
+        md_cmd.append("--only-ok")
     md = run_json(md_cmd)
 
     # 2) Upload gist
