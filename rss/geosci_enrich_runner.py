@@ -210,8 +210,53 @@ def translate_title_abstract(title_en: str, abstract_en: str, model: str) -> tup
     return t, a
 
 
+def should_skip_no_abstract(title: str) -> str | None:
+    t = (title or "").strip().lower()
+    # Content types that usually do not have abstracts on publisher pages.
+    patterns = [
+        (r"^editorial board\b", "editorial_board"),
+        (r"\bcorrigendum\b", "corrigendum"),
+        (r"\bremoval notice\b", "removal_notice"),
+        (r"\bcomment on\b", "comment"),
+        (r"\breply to the comment\b", "reply"),
+        (r"\berratum\b", "erratum"),
+    ]
+    for pat, code in patterns:
+        if re.search(pat, t, flags=re.I):
+            return code
+    return None
+
+
 def enrich_one_abstract(conn, item_id: int, title: str, link: str, doi: str | None, timeout: int) -> dict:
     started = time.time()
+
+    # Skip types expected to have no abstract to avoid wasting batch slots.
+    skip_code = should_skip_no_abstract(title)
+    if skip_code:
+        conn.execute(
+            """
+            UPDATE items
+            SET enrich_status='no_abstract',
+                enrich_error=?,
+                enriched_at_utc=?
+            WHERE id=?
+            """,
+            (f"content_type_no_abstract_expected:{skip_code}", utc_now_iso(), item_id),
+        )
+        conn.commit()
+        return {
+            "itemId": item_id,
+            "ok": True,
+            "skipped": True,
+            "skipReason": skip_code,
+            "doi": doi or extract_doi(link),
+            "source": None,
+            "abstractLen": 0,
+            "error": None,
+            "durationMs": int((time.time() - started) * 1000),
+            "title": title,
+        }
+
     err_parts = []
 
     doi2 = doi or extract_doi(link)
@@ -566,7 +611,7 @@ def main() -> int:
                 """
                 SELECT id
                 FROM items
-                WHERE enrich_status IS NULL OR enrich_status != 'ok'
+                WHERE enrich_status IS NULL OR enrich_status NOT IN ('ok','no_abstract')
                 ORDER BY first_seen_at_utc ASC
                 LIMIT ?
                 """,
