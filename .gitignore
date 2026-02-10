@@ -1,0 +1,45 @@
+# --- OpenClaw workspace ignores ---
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node
+node_modules/
+
+# Local outputs / artifacts
+out/
+/tmp/
+*.log
+*.jsonl
+
+# Data/state (should not be committed)
+**/state.json
+**/*_state.json
+crypto/state.json
+rss/earthquake_state.json
+rss/rweekly_state.json
+rss/technews_rpi_state.json
+gmail/state.json
+
+# SQLite DB
+rss/db/*.sqlite
+rss/db/*.sqlite-*
+
+# Outbox (generated daily)
+rss/outbox/
+
+# Credentials / secrets
+.env
+*.key
+*.pem
+/home/person/.openclaw/credentials/
+
+# Large media / transcripts
+podcast/**/*.mp3
+podcast/**/chunks/
+
+# Inbox / scratch
+inbox/
