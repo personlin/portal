@@ -274,13 +274,28 @@ def enrich_one_abstract(conn, item_id: int, title: str, link: str, doi: str | No
     abstract = None
     source = None
 
+    # Strategy A: prefer DOI-metadata sources first (Crossref), only scrape HTML as a last resort.
     html = None
-    if link:
+
+    # 0) If DOI is already extractable from link, try Crossref first.
+    if not doi2:
+        doi2 = extract_doi(link)
+
+    # 1) Crossref first
+    if doi2:
+        try:
+            abstract = crossref_abstract(doi2)
+            if abstract:
+                source = "crossref"
+        except Exception as e:
+            err_parts.append(f"crossref:{type(e).__name__}:{e}")
+
+    # 2) HTML scrape (last resort)
+    if not abstract and link:
         try:
             html = http_get(link, timeout=timeout)
-            # Some publishers (e.g., ScienceDirect) don't embed the abstract in static HTML,
-            # but they do embed DOI in meta tags; extract DOI from HTML as a fallback.
-            if not doi2 and html:
+            # Some publishers embed DOI in meta tags; extract DOI from HTML as a fallback.
+            if (not doi2) and html:
                 doi2 = extract_doi_from_html(html)
 
             abstract = extract_abstract_from_html(html)
@@ -289,16 +304,7 @@ def enrich_one_abstract(conn, item_id: int, title: str, link: str, doi: str | No
         except Exception as e:
             err_parts.append(f"html:{type(e).__name__}:{e}")
 
-    # Crossref (works well for many publishers, including some OUP)
-    if not abstract and doi2:
-        try:
-            abstract = crossref_abstract(doi2)
-            if abstract:
-                source = "crossref"
-        except Exception as e:
-            err_parts.append(f"crossref:{type(e).__name__}:{e}")
-
-    # DOI landing fallback: sometimes academic.oup.com blocks, but doi.org redirects to an accessible landing page.
+    # 3) DOI landing fallback (still HTML; may be blocked by CF)
     if not abstract and doi2:
         try:
             doi_url = f"https://doi.org/{doi2}"
@@ -327,16 +333,19 @@ def enrich_one_abstract(conn, item_id: int, title: str, link: str, doi: str | No
         error = None
     else:
         error = ";".join(err_parts) if err_parts else "no_abstract_found"
+        # If we saw 403 blocks, mark as blocked so the batch won't churn on it repeatedly.
+        blocked = ("403" in error)
+        status = 'blocked' if blocked else 'failed'
         conn.execute(
             """
             UPDATE items
             SET doi=COALESCE(?, doi),
-                enrich_status='failed',
+                enrich_status=?,
                 enrich_error=?,
                 enriched_at_utc=?
             WHERE id=?
             """,
-            (doi2, error, utc_now_iso(), item_id),
+            (doi2, status, error, utc_now_iso(), item_id),
         )
         ok = False
 
@@ -635,7 +644,7 @@ def main() -> int:
                 """
                 SELECT id
                 FROM items
-                WHERE enrich_status IS NULL OR enrich_status NOT IN ('ok','no_abstract')
+                WHERE enrich_status IS NULL OR enrich_status NOT IN ('ok','no_abstract','blocked')
                 ORDER BY first_seen_at_utc ASC
                 LIMIT ?
                 """,
