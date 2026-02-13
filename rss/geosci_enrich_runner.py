@@ -95,6 +95,27 @@ def crossref_lookup(doi: str) -> dict | None:
         return None
 
 
+def semantic_scholar_abstract(doi: str, timeout: int = 25) -> str | None:
+    """Fetch abstract via Semantic Scholar Graph API (no key required for light use)."""
+    # Semantic Scholar accepts plain DOI in the path (not DOI: prefix)
+    url = "https://api.semanticscholar.org/graph/v1/paper/" + urllib.parse.quote(doi, safe="") + "?fields=abstract"
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (OpenClaw geosci_enrich_runner)",
+                "Accept": "application/json",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=int(timeout)) as resp:
+            raw = resp.read().decode("utf-8", errors="ignore")
+        data = json.loads(raw)
+        abs_txt = (data.get("abstract") or "").strip()
+        return abs_txt if len(abs_txt) > 80 else None
+    except Exception:
+        return None
+
+
 def crossref_abstract(doi: str) -> str | None:
     msg = crossref_lookup(doi)
     if not msg:
@@ -231,6 +252,7 @@ def should_skip_no_abstract(title: str) -> str | None:
         (r"\breply to the comment\b", "reply"),
         (r"\berratum\b", "erratum"),
         (r"^correction to:", "correction"),
+        (r"^issue information\b", "issue_information"),
     ]
     for pat, code in patterns:
         if re.search(pat, t, flags=re.I):
@@ -290,6 +312,16 @@ def enrich_one_abstract(conn, item_id: int, title: str, link: str, doi: str | No
         except Exception as e:
             err_parts.append(f"crossref:{type(e).__name__}:{e}")
 
+    # 1b) Semantic Scholar fallback (API) if Crossref has no abstract
+    if (not abstract) and doi2:
+        try:
+            abs2 = semantic_scholar_abstract(doi2, timeout=timeout)
+            if abs2:
+                abstract = abs2
+                source = "semanticscholar"
+        except Exception as e:
+            err_parts.append(f"semanticscholar:{type(e).__name__}:{e}")
+
     # 2) HTML scrape (last resort)
     if not abstract and link:
         try:
@@ -334,6 +366,7 @@ def enrich_one_abstract(conn, item_id: int, title: str, link: str, doi: str | No
     else:
         error = ";".join(err_parts) if err_parts else "no_abstract_found"
         # If we saw 403 blocks, mark as blocked so the batch won't churn on it repeatedly.
+        # Only do this after trying API fallbacks (Crossref/S2). If still no abstract and 403 present, it's likely hard-blocked.
         blocked = ("403" in error)
         status = 'blocked' if blocked else 'failed'
         conn.execute(
