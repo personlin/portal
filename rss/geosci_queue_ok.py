@@ -97,12 +97,32 @@ def main() -> int:
     q_marks = 0
     for item_id in ids:
         row = conn.execute(
-            "SELECT id, status FROM deliveries WHERE item_id=? AND channel=? AND target=? ORDER BY id DESC LIMIT 1",
+            """
+            SELECT d.id, d.status, d.sent_at_utc, i.enriched_at_utc
+            FROM deliveries d
+            JOIN items i ON i.id=d.item_id
+            WHERE d.item_id=? AND d.channel=? AND d.target=?
+            ORDER BY d.id DESC
+            LIMIT 1
+            """,
             (int(item_id), str(args.channel), str(args.target)),
         ).fetchone()
         if row:
-            delivery_id, status = int(row[0]), row[1]
-            if status != 'pending':
+            delivery_id, status, sent_at, enriched_at = int(row[0]), row[1], row[2], row[3]
+
+            # Only re-queue if the delivery was sent BEFORE enrichment completed.
+            # If it was sent after (or at) enriched_at_utc, it's already a complete delivery; don't resend.
+            needs_resend = False
+            if enriched_at:
+                if not sent_at:
+                    needs_resend = True
+                else:
+                    needs_resend = str(sent_at) < str(enriched_at)
+            else:
+                # If no enriched_at, shouldn't happen for ok items, but be safe.
+                needs_resend = False
+
+            if status != 'pending' and needs_resend:
                 conn.execute(
                     "UPDATE deliveries SET status='pending', error=NULL, created_at_utc=? WHERE id=?",
                     (rss_store.utc_now_iso(), delivery_id),
