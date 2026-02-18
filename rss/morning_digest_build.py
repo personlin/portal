@@ -27,6 +27,7 @@ OUTBOX_DIR = os.path.join(BASE_DIR, "outbox")
 
 GEOSCI_DB_TO_GIST = os.path.join(BASE_DIR, "geosci_db_to_gist.py")
 EQ_DIGEST = os.path.join(BASE_DIR, "earthquake_digest.py")
+CWA_EQ_DIGEST = os.path.join(BASE_DIR, "cwa_earthquake_digest.py")
 TECH_RPI = os.path.join(BASE_DIR, "technews_rpi_watcher.py")
 CRYPTO = os.path.join(WORKSPACE, "crypto", "crypto_watcher.py")
 
@@ -119,6 +120,27 @@ def fmt_eq(eq_json: dict, limit: int) -> str:
     return "\n".join(lines)
 
 
+def fmt_cwa_eq(cwa_json: dict, limit: int) -> str:
+    items = cwa_json.get("items") or []
+    if not items:
+        return "近 24 小時無顯著地震（中央氣象署）"
+    lines = []
+    for it in items[:limit]:
+        mag = it.get("magnitude")
+        intensity = (it.get("intensity") or "").strip()
+        place = (it.get("place") or "").strip()
+        depth = it.get("depthKm")
+        tpe = it.get("timeTaipei")
+        url = it.get("url")
+        m = f"M{mag:.1f}" if isinstance(mag, (int, float)) else "M?"
+        d = f"{depth:.1f}km" if isinstance(depth, (int, float)) else "?km"
+        inten = intensity or "?級"
+        lines.append(f"- {m}（{inten}）{place} 深度 {d}（{tpe}）\n  {url}")
+    if len(items) > limit:
+        lines.append(f"- …其餘 {len(items)-limit} 則略")
+    return "\n".join(lines)
+
+
 def html_escape(s: str) -> str:
     return (
         s.replace("&", "&amp;")
@@ -158,8 +180,16 @@ def main() -> int:
     crypto = run_json(["python3", CRYPTO, "--mode", "summary"], timeout=60)
     crypto_short, crypto_long = fmt_crypto(crypto)
 
-    # 3) Earthquake
+    # 3) Earthquake (USGS)
     eq = run_json(["python3", EQ_DIGEST], timeout=60)
+
+    # 3b) Taiwan earthquakes (CWA)
+    try:
+        cwa_eq = run_json(["python3", CWA_EQ_DIGEST, "--hours", "24", "--limit", "5"], timeout=60)
+        cwa_eq_error = None
+    except Exception as e:
+        cwa_eq = {"ok": False, "items": []}
+        cwa_eq_error = f"{type(e).__name__}: {e}"
 
     # 4) Tech news (Raspberry Pi) — daily
     rpi = run_json(["python3", TECH_RPI], timeout=60)
@@ -177,6 +207,9 @@ def main() -> int:
         "",
         "地震（USGS 重大，近 24h）",
         fmt_eq(eq, limit=3),
+        "",
+        "台灣地震（中央氣象署，近 24h）",
+        fmt_cwa_eq(cwa_eq, limit=3),
     ]
     if rpi_new == 0:
         t_lines += ["", "科技新聞（Raspberry Pi）：今日無更新"]
@@ -204,7 +237,10 @@ def main() -> int:
         "[3] 地震（USGS Significant past day）",
         fmt_eq(eq, limit=10),
         "",
-        "[4] 科技新聞（Raspberry Pi）",
+        "[4] 台灣地震（中央氣象署，近 24 小時）",
+        (fmt_cwa_eq(cwa_eq, limit=10) if not cwa_eq_error else f"（讀取失敗：{cwa_eq_error}）"),
+        "",
+        "[5] 科技新聞（Raspberry Pi）",
     ]
     if rpi_new == 0:
         e_lines.append("今日無更新")
@@ -274,6 +310,30 @@ def main() -> int:
             )
         eq_html = "<ul style='padding-left:18px; margin:10px 0 0 0;'>" + "".join(lis) + "</ul>"
 
+    cwa_items = (cwa_eq or {}).get("items") or []
+    if not cwa_items:
+        cwa_html = "<div style='color:#6b7280;'>近 24 小時無顯著地震（中央氣象署）</div>"
+    else:
+        lis = []
+        for it in cwa_items[:10]:
+            mag = it.get("magnitude")
+            intensity = html_escape(str(it.get("intensity") or ""))
+            place = html_escape(str(it.get("place") or ""))
+            depth = it.get("depthKm")
+            tpe = html_escape(str(it.get("timeTaipei") or ""))
+            url = str(it.get("url") or "")
+            m = f"M{mag:.1f}" if isinstance(mag, (int, float)) else "M?"
+            d = f"{depth:.1f}km" if isinstance(depth, (int, float)) else "?km"
+            lis.append(
+                f"<li style='margin:0 0 10px 0;'>"
+                f"<div style='font-weight:700;'>{html_escape(m)}（{intensity or '—'}）</div>"
+                f"<div style='margin-top:2px; color:#111827;'>{place}</div>"
+                f"<div style='color:#6b7280; font-size:12px; margin-top:2px;'>深度 {html_escape(d)} · {tpe}</div>"
+                f"<div style='margin-top:3px;'>{linkify(url) if url else ''}</div>"
+                f"</li>"
+            )
+        cwa_html = "<ul style='padding-left:18px; margin:10px 0 0 0;'>" + "".join(lis) + "</ul>"
+
     if rpi_new == 0:
         tech_html = "<div style='color:#6b7280;'>今日無更新</div>"
     else:
@@ -342,7 +402,12 @@ def main() -> int:
     </div>
 
     <div style="background:#fff; padding:16px 18px; border-radius:12px; margin-top:12px; border:1px solid #e5e7eb;">
-      <div style="font-size:16px; font-weight:800; color:#111827;">[4] 科技新聞（Raspberry Pi）</div>
+      <div style="font-size:16px; font-weight:800; color:#111827;">[4] 台灣地震（中央氣象署，近 24 小時）</div>
+      {cwa_html if not cwa_eq_error else "<div style='color:#dc2626;'>讀取失敗：" + html_escape(str(cwa_eq_error)) + "</div>"}
+    </div>
+
+    <div style="background:#fff; padding:16px 18px; border-radius:12px; margin-top:12px; border:1px solid #e5e7eb;">
+      <div style="font-size:16px; font-weight:800; color:#111827;">[5] 科技新聞（Raspberry Pi）</div>
       {tech_html}
     </div>
 
