@@ -142,16 +142,18 @@ def list_last(limit: int = 10) -> dict:
 
 
 def add_tx(*,
-           title: str,
+           title: str | None,
            date: str,
            portfolio_name: str,
            side: str,
            qty: float,
            unit_price: float,
            account_name: str) -> dict:
-    side = (side or "").strip()
-    if side not in ("Bought", "Sold"):
+    side_in = (side or "").strip()
+    side_norm = {"buy": "Bought", "bought": "Bought", "sell": "Sold", "sold": "Sold"}.get(side_in.lower())
+    if not side_norm:
         raise ValueError("side_must_be_Bought_or_Sold")
+    side = side_norm
 
     # Basic date validation (YYYY-MM-DD)
     if not re.match(r"^\d{4}-\d{2}-\d{2}$", date):
@@ -159,6 +161,12 @@ def add_tx(*,
 
     portfolio_id = resolve_relation_by_name(src_id=PORTFOLIO_SRC_ID, name_prop=PORTFOLIO_NAME_PROP, name=portfolio_name)
     account_id = resolve_relation_by_name(src_id=ACCOUNT_SRC_ID, name_prop=ACCOUNT_NAME_PROP, name=account_name)
+
+    # Auto-title (Transaction title) if omitted
+    title = (title or "").strip()
+    if not title:
+        action = "買入" if side == "Bought" else "賣出"
+        title = f"{action} {portfolio_name}"
 
     body = {
         "parent": {"database_id": TX_DB_ID},
@@ -187,10 +195,10 @@ def main() -> int:
     p_list.add_argument("--limit", type=int, default=10)
 
     p_add = sub.add_parser("add")
-    p_add.add_argument("--title", required=True, help="Transaction title")
+    p_add.add_argument("--title", default=None, help="Transaction title (omit to auto-generate)")
     p_add.add_argument("--date", required=True, help="YYYY-MM-DD")
     p_add.add_argument("--portfolio", required=True, help="Portfolio Name (relation)")
-    p_add.add_argument("--side", required=True, choices=["Bought", "Sold"])
+    p_add.add_argument("--side", required=True, help="Bought|Sold (also accepts Buy|Sell)")
     p_add.add_argument("--qty", required=True, type=float)
     p_add.add_argument("--unit-price", required=True, type=float)
     p_add.add_argument("--account", required=True, help="Account Name (relation)")
@@ -202,7 +210,7 @@ def main() -> int:
             out = list_last(limit=int(args.limit))
         elif args.cmd == "add":
             out = add_tx(
-                title=str(args.title),
+                title=(str(args.title) if args.title is not None else None),
                 date=str(args.date),
                 portfolio_name=str(args.portfolio),
                 side=str(args.side),
