@@ -153,9 +153,10 @@ def main() -> int:
     email_meta = meta.setdefault("email", {})
     tg_meta = meta.setdefault("telegram", {})
 
-    # Prefer sidecar files if present
-    email_text = read_text(txt_path) if os.path.exists(txt_path) else (payload.get("email") or {}).get("text") or ""
-    email_html = read_text(html_path) if os.path.exists(html_path) else (payload.get("email") or {}).get("html") or ""
+    # IMPORTANT: Use the outbox JSON payload as the source of truth.
+    # Sidecar files are artifacts and may be stale if multiple builds happened.
+    email_text = (payload.get("email") or {}).get("text") or ""
+    email_html = (payload.get("email") or {}).get("html") or ""
 
     out["email"] = {
         "to": (payload.get("email") or {}).get("to"),
@@ -163,6 +164,7 @@ def main() -> int:
         "subject": (payload.get("email") or {}).get("subject"),
         "textLen": len(email_text or ""),
         "htmlLen": len(email_html or ""),
+        "sidecarPresent": {"emailTxt": os.path.exists(txt_path), "emailHtml": os.path.exists(html_path)},
         "alreadySentAtUtc": email_meta.get("sentAtUtc"),
         "alreadyOk": email_meta.get("ok"),
     }
