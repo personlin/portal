@@ -74,6 +74,7 @@ def main() -> int:
         JOIN feeds f ON f.id=i.feed_id
         WHERE d.channel='geosci' AND d.target='morning_digest'
           AND d.batch_id=?
+          AND i.enrich_status='ok'
         ORDER BY d.id ASC
         LIMIT ?
         """,
