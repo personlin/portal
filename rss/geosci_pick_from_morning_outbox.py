@@ -35,7 +35,7 @@ def main() -> int:
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--date", default=None, help="Taipei date YYYY-MM-DD (default today)")
-    ap.add_argument("--limit", type=int, default=30)
+    ap.add_argument("--limit", type=int, default=300)
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
 
