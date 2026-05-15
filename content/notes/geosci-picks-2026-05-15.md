@@ -5,7 +5,7 @@ tags: ["geosci", "papers"]
 categories: ["notes"]
 ---
 
-本日選文（共 4 篇）。
+本日選文（共 5 篇）。
 
 ## [1794] 針對希臘北部 Prinos CO2 儲存場址潛在誘發地震之混合地震動模型（混合 GMM）
 **Hybrid Ground‐Motion Model for Potential Induced Seismicity at the Prinos     CO  2     Storage Site (Northern Greece)**
@@ -20,6 +20,20 @@ The paper presents the first region-specific hybrid ground-motion model (GMM) de
 
 **重點摘要（繁中）**
 本研究提出針對希臘北部 Prinos 二氧化碳儲存場潛在注入誘發地震所開發的首個區域性混合地震動模型。該框架將以先驗地震學模型為約束的隨機模擬與區域觀測資料校準結合，透過迭代優化參數並保留可接受參數組合以量化知識不確定性。研究使用合成資料集（2≤Mw≤6、震源距離最遠80 km）並整合包含機器學習衍生事件的擴充經驗資料，以提供本區域地震動及危害評估的依據並推進歐洲誘發地震地震動表徵的方法學。
+
+## [1795] 透過非遍歷建模探討義大利中部地震動之時空變異性
+**Exploring Spatiotemporal Variability of Ground Motion Through Nonergodic Modeling in Central Italy**
+
+- 期刊：Geophysics (GeoScienceWorld) — Advance Access
+- Published：Wed, 13 May 2026 00:00:00 GMT
+- DOI：10.1785/0120250253/730781
+- 原文連結：[連結](https://pubs.geoscienceworld.org/ssa/bssa/article/doi/10.1785/0120250253/730781/Exploring-Spatiotemporal-Variability-of-Ground)
+
+**Summary (EN)**
+The paper presents a new nonergodic, nonstationary (NENS) ground‑motion prediction model for central Italy built from an extensive strong‑motion dataset that includes the 2016–2017 Amatrice–Visso–Norcia sequence. The model is a nested mixed‑effects regression for Fourier amplitude spectra (0.2–30 Hz) using ∼434,000 recordings from 9,948 events (Mw 1.8–6.5), explicitly including site-, path-, and source‑specific random effects that vary across three time phases (presequence, main sequence, postsequence). Residuals show significant spatiotemporal variability and a locally variable reduction in median ground‑motion amplitudes during dissipative phases, highlighting the need to account for spatial and temporal nonergodicity and the value of high‑density instrumentation to capture transient changes.
+
+**重點摘要（繁中）**
+本文提出一個適用於義大利中部的新型非遍歷且非平穩（NENS）地動預測模型，使用包含2016–2017 Amatrice–Visso–Norcia震序在內的大量強震觀測資料。該模型為傅立葉振幅頻譜（0.2–30 Hz）之巢狀混合效應回歸，使用約434,000個紀錄、9,948個事件（矩震級1.8–6.5），明確納入隨時間於前序、主序及後序三階段變化的場址、波徑與震源隨機效應。殘差分析顯示顯著的時空變異性，且在耗散性階段（如流體飽和或高度散射條件）中位地動振幅局部降低，強調在義大利中部需同時考量空間與時間的非遍歷性，並顯示密集儀器網能捕捉瞬變效應的價值。
 
 ## [1796] 透過自適應重要取樣快速傳播地震危害中的知識不確定性
 **Fast Propagation of Epistemic Uncertainty in Seismic Hazard via Adaptive Importance Sampling**
