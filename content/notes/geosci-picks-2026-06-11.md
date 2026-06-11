@@ -1,6 +1,6 @@
 ---
 title: "GeoSci 精選 2026-06-11"
-date: 2026-06-11T12:00:00+08:00
+date: 2026-06-11T10:51:00+08:00
 tags: ["geosci", "papers"]
 categories: ["notes"]
 ---
