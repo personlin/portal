@@ -1,6 +1,6 @@
 ---
 title: "GeoSci 精選 2026-08-31"
-date: 2026-08-31T12:00:00+08:00
+date: 2026-08-31T08:13:00+08:00
 tags: ["geosci", "papers"]
 categories: ["notes"]
 ---
