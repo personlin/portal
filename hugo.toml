@@ -1,5 +1,6 @@
 baseURL = 'https://personlin.github.io/portal/'
 languageCode = 'zh-tw'
+defaultContentLanguage = 'zh-tw'
 title = 'Portal'
 # This is a GitHub Project Pages site (https://personlin.github.io/portal/)
 # so we must set the correct base path.
@@ -7,6 +8,14 @@ canonifyURLs = true
 relativeURLs = false
 
 theme = 'PaperMod'
+
+[languages]
+  [languages.zh-tw]
+    languageName = '繁體中文'
+    weight = 1
+
+[outputs]
+  home = ['HTML', 'RSS', 'JSON']
 
 [markup]
   [markup.goldmark]
@@ -16,6 +25,7 @@ theme = 'PaperMod'
       linkify = true
 
 [params]
+  author = '林柏伸 (Lin Po-Shen)'
   description = 'Personal portal'
   defaultTheme = 'auto'
   ShowReadingTime = false
@@ -24,9 +34,34 @@ theme = 'PaperMod'
   ShowBreadCrumbs = true
   ShowCodeCopyButtons = true
 
+  # Open Graph / Twitter Card
+  images = ['/share-image.png']
+
+  # Social icons
+  [[params.socialIcons]]
+    name = 'github'
+    url = 'https://github.com/personlin'
+  [[params.socialIcons]]
+    name = 'rss'
+    url = '/index.xml'
+  # Uncomment and fill in your email:
+  # [[params.socialIcons]]
+  #   name = 'email'
+  #   url = 'mailto:your-email@example.com'
+
   [params.homeInfoParams]
     Title = 'Portal'
     Content = 'Welcome. Use the menu for Links and Notes.'
+
+  # Search configuration
+  [params.fuseOpts]
+    isCaseSensitive = false
+    shouldSort = true
+    location = 0
+    distance = 1000
+    threshold = 0.4
+    minMatchCharLength = 0
+    keys = ['title', 'permalink', 'summary', 'content']
 
 [menu]
   [[menu.main]]
@@ -44,3 +79,18 @@ theme = 'PaperMod'
     name = 'Notes'
     url = 'notes/'
     weight = 3
+  [[menu.main]]
+    identifier = 'tags'
+    name = 'Tags'
+    url = 'tags/'
+    weight = 4
+  [[menu.main]]
+    identifier = 'categories'
+    name = 'Categories'
+    url = 'categories/'
+    weight = 5
+  [[menu.main]]
+    identifier = 'search'
+    name = 'Search'
+    url = 'search/'
+    weight = 6
