@@ -4,7 +4,8 @@ defaultContentLanguage = 'zh-tw'
 title = 'Portal'
 # This is a GitHub Project Pages site (https://personlin.github.io/portal/)
 # so we must set the correct base path.
-canonifyURLs = true
+# Let Hugo and PaperMod preserve the base path, including pagination URLs.
+canonifyURLs = false
 relativeURLs = false
 
 theme = 'PaperMod'
@@ -36,6 +37,10 @@ theme = 'PaperMod'
 
   # Open Graph / Twitter Card
   images = ['share-image.png']
+
+  [params.assets]
+    favicon = 'favicon.svg'
+    safari_pinned_tab = 'safari-pinned-tab.svg'
 
   # Social icons
   [[params.socialIcons]]

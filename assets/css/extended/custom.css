@@ -10,6 +10,7 @@
     /* Light mode - refined academic palette */
     --custom-accent: #2563eb; /* Blue 600 - professional, trustworthy */
     --custom-accent-hover: #1d4ed8; /* Blue 700 */
+    --custom-accent-foreground: #ffffff;
     --custom-accent-light: #dbeafe; /* Blue 50 */
     --custom-text-primary: #1f2937; /* Gray 800 */
     --custom-text-secondary: #6b7280; /* Gray 500 */
@@ -24,6 +25,7 @@
     /* Dark mode - softer, easier on eyes */
     --custom-accent: #60a5fa; /* Blue 400 */
     --custom-accent-hover: #93c5fd; /* Blue 300 */
+    --custom-accent-foreground: #111827;
     --custom-accent-light: #1e3a8a; /* Blue 900 */
     --custom-text-primary: #f3f4f6; /* Gray 100 */
     --custom-text-secondary: #9ca3af; /* Gray 400 */
@@ -126,7 +128,7 @@ code, pre {
 .profile .button {
     padding: 0.75rem 1.75rem;
     background: var(--custom-accent);
-    color: white;
+    color: var(--custom-accent-foreground);
     border-radius: 0.5rem;
     text-decoration: none;
     font-weight: 500;
@@ -259,7 +261,7 @@ code, pre {
 
 .terms-tags a:hover, .post-tags a:hover {
     background: var(--custom-accent);
-    color: white;
+    color: var(--custom-accent-foreground);
     transform: translateY(-1px);
 }
 
