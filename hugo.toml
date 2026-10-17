@@ -35,7 +35,7 @@ theme = 'PaperMod'
   ShowCodeCopyButtons = true
 
   # Open Graph / Twitter Card
-  images = ['/share-image.png']
+  images = ['share-image.png']
 
   # Social icons
   [[params.socialIcons]]
@@ -43,7 +43,7 @@ theme = 'PaperMod'
     url = 'https://github.com/personlin'
   [[params.socialIcons]]
     name = 'rss'
-    url = '/index.xml'
+    url = 'index.xml'
   # Uncomment and fill in your email:
   # [[params.socialIcons]]
   #   name = 'email'
@@ -54,14 +54,14 @@ theme = 'PaperMod'
     enabled = true
     title = '林柏伸 (Lin Po-Shen)'
     subtitle = 'Earthquake Hazard & Disaster Prevention Researcher'
-    imageUrl = '/share-image.png'
+    imageUrl = 'share-image.png'
     imageWidth = 160
     imageHeight = 160
     imageTitle = 'Portal'
     buttons = [
-      { name = 'Notes', url = '/notes/' },
-      { name = 'Links', url = '/links/' },
-      { name = 'Search', url = '/search/' }
+      { name = 'Notes', url = 'notes/' },
+      { name = 'Links', url = 'links/' },
+      { name = 'Search', url = 'search/' }
     ]
 
   # Alternative: uncomment to use homeInfoParams instead
