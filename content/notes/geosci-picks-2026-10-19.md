@@ -1,6 +1,6 @@
 ---
 title: "GeoSci 精選 2026-10-19"
-date: 2026-10-19T12:00:00+08:00
+date: 2026-10-19T00:00:00+08:00
 tags: ["geosci", "papers", "Seismology", "Geophysics", "Earthquake"]
 categories: ["notes"]
 ---
